@@ -69,3 +69,92 @@ export async function unreserveGift(slug: string, id: string) {
   });
   return { success: true };
 }
+
+// For guest (cancel their own reservation)
+export async function cancelReservation(slug: string, id: string, guestEmail: string) {
+  if (!guestEmail) throw new Error("Correo requerido");
+  
+  const giftRef = adminDb.collection(`events/${slug}/gifts`).doc(id);
+  
+  await adminDb.runTransaction(async (transaction) => {
+    const giftDoc = await transaction.get(giftRef);
+    if (!giftDoc.exists) throw new Error("Regalo no encontrado");
+    const data = giftDoc.data()!;
+    
+    const prevList = data.reservedByList || [];
+    const indexToRemove = prevList.findIndex((r: { email?: string }) => r.email?.toLowerCase() === guestEmail.toLowerCase());
+    
+    if (indexToRemove === -1) {
+      throw new Error("No tienes reservas para este regalo");
+    }
+
+    const newList = [...prevList];
+    newList.splice(indexToRemove, 1);
+    
+    const newCount = Math.max(0, (data.reservedCount || 1) - 1);
+    
+    const updates: Record<string, unknown> = {
+      reservedCount: newCount,
+      reservedByList: newList
+    };
+    
+    // Clear backward compatibility fields if no reservations left
+    if (newCount === 0) {
+      updates.reservedBy = null;
+      updates.reservedByAnimal = null;
+      updates.reservedByEmail = null;
+    } else if (indexToRemove === 0) {
+      // If we removed the first one, update legacy fields to the new first one
+      updates.reservedBy = newList[0].name;
+      updates.reservedByAnimal = newList[0].animal;
+      updates.reservedByEmail = newList[0].email;
+    }
+    
+    transaction.update(giftRef, updates);
+  });
+
+  return { success: true };
+}
+
+// For Admin (remove specific reservation by index)
+export async function adminRemoveReservationIndex(slug: string, id: string, indexToRemove: number) {
+  if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
+  
+  const giftRef = adminDb.collection(`events/${slug}/gifts`).doc(id);
+  
+  await adminDb.runTransaction(async (transaction) => {
+    const giftDoc = await transaction.get(giftRef);
+    if (!giftDoc.exists) throw new Error("Regalo no encontrado");
+    const data = giftDoc.data()!;
+    
+    const prevList = data.reservedByList || [];
+    if (indexToRemove < 0 || indexToRemove >= prevList.length) {
+      throw new Error("Índice de reserva inválido");
+    }
+
+    const newList = [...prevList];
+    newList.splice(indexToRemove, 1);
+    
+    const newCount = Math.max(0, (data.reservedCount || 1) - 1);
+    
+    const updates: Record<string, unknown> = {
+      reservedCount: newCount,
+      reservedByList: newList
+    };
+    
+    if (newCount === 0) {
+      updates.reservedBy = null;
+      updates.reservedByAnimal = null;
+      updates.reservedByEmail = null;
+    } else if (indexToRemove === 0) {
+      updates.reservedBy = newList[0].name;
+      updates.reservedByAnimal = newList[0].animal;
+      updates.reservedByEmail = newList[0].email;
+    }
+    
+    transaction.update(giftRef, updates);
+  });
+
+  return { success: true };
+}
+

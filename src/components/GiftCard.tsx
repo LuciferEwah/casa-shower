@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Gift } from '@/types';
-import { reserveGift } from '@/app/actions/giftActions';
+import { reserveGift, cancelReservation } from '@/app/actions/giftActions';
 import { Card, CardMedia, CardContent, Typography, Button, Box, Chip, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { GuestIdentity } from './GuestView';
 import { getGiftCategory, categoryLabels } from '@/lib/categories';
@@ -34,6 +34,21 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
       const res = await reserveGift(slug, gift.id, guestIdentity.name, guestIdentity.lastname, guestIdentity.email);
       if (res.success) {
         showToast(`¡Reservado exitosamente!`, 'success');
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error) showToast(e.message, 'error');
+    }
+    setLoading(false);
+  };
+
+  const handleCancel = async () => {
+    if (!guestIdentity) return;
+    
+    setLoading(true);
+    try {
+      const res = await cancelReservation(slug, gift.id, guestIdentity.email);
+      if (res.success) {
+        showToast(`Reserva anulada`, 'success');
       }
     } catch (e: unknown) {
       if (e instanceof Error) showToast(e.message, 'error');
@@ -86,9 +101,15 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
         <Typography variant="h5" className="font-bold text-slate-800 dark:text-slate-100 mb-1 leading-tight">
           {gift.name}
         </Typography>
-        <Typography variant="h6" className="font-bold text-purple-600 dark:text-purple-400 mb-4">
-          ${gift.price.toLocaleString('es-CL')}
-        </Typography>
+        
+        <div className="flex justify-between items-center mb-4">
+          <Typography variant="h6" className="font-bold text-purple-600 dark:text-purple-400">
+            ${gift.price.toLocaleString('es-CL')}
+          </Typography>
+          <Typography variant="body2" className="text-slate-500 font-medium">
+            {gift.unlimited ? 'Ilimitado' : `Reservados: ${count} / ${needed}`}
+          </Typography>
+        </div>
 
         <div className="flex flex-col gap-4">
           {gift.link && (
@@ -114,7 +135,7 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
                     fullWidth 
                     variant="contained" 
                     color="primary"
-                    disabled={loading || (reservedByMe && !gift.unlimited)} // If it's unlimited, they can reserve again
+                    disabled={loading || (reservedByMe && !gift.unlimited)} 
                     onClick={handleReserve}
                     className="rounded-xl py-3 font-bold shadow-md hover:shadow-lg transition-all"
                   >
@@ -122,6 +143,19 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
                      (reservedByMe && !gift.unlimited) ? '¡Ya lo reservaste!' : 
                      gift.unlimited ? 'Reservar Otro' : 'Reservar Regalo'}
                   </Button>
+                  
+                  {reservedByMe && (
+                    <Button 
+                      fullWidth 
+                      variant="text" 
+                      color="error"
+                      disabled={loading}
+                      onClick={handleCancel}
+                      className="rounded-xl py-2 font-bold hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
+                    >
+                      Anular Reserva
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

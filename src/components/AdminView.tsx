@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Gift, Settings } from '@/types';
-import { deleteGift, unreserveGift } from '@/app/actions/giftActions';
+import { deleteGift, unreserveGift, adminRemoveReservationIndex } from '@/app/actions/giftActions';
 import { updateEventSettings } from '@/app/actions/eventActions';
 import { GiftForm } from './GiftForm';
 import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert } from '@mui/material';
@@ -30,11 +30,24 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   };
 
   const handleUnreserve = async (id: string) => {
-    try {
-      await unreserveGift(slug, id);
-      showToast('Regalo liberado', 'success');
-    } catch (e: unknown) {
-      if (e instanceof Error) showToast(e.message, 'error');
+    if (confirm("Seguro que quieres liberar TODAS las reservas de este regalo?")) {
+      try {
+        await unreserveGift(slug, id);
+        showToast('Todas las reservas liberadas', 'success');
+      } catch (e: unknown) {
+        if (e instanceof Error) showToast(e.message, 'error');
+      }
+    }
+  };
+
+  const handleRemoveIndividual = async (id: string, index: number) => {
+    if (confirm("Seguro que quieres eliminar esta reserva específica?")) {
+      try {
+        await adminRemoveReservationIndex(slug, id, index);
+        showToast('Reserva eliminada', 'success');
+      } catch (e: unknown) {
+        if (e instanceof Error) showToast(e.message, 'error');
+      }
     }
   };
 
@@ -250,10 +263,32 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                   </Button>
                   {(gift.reservedCount && gift.reservedCount > 0) ? (
                     <Button size="large" variant="contained" color="secondary" className="w-full sm:w-auto rounded-full font-bold px-8 py-2.5 sm:py-3 shadow-md" onClick={() => handleUnreserve(gift.id)}>
-                      Liberar
+                      Liberar Todo
                     </Button>
                   ) : null}
                 </div>
+                
+                {/* List of individual reservations */}
+                {gift.reservedByList && gift.reservedByList.length > 0 && (
+                  <div className="w-full mt-6 bg-slate-100/50 dark:bg-slate-800/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                    <Typography variant="subtitle2" className="font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider text-xs">
+                      Detalle de Reservas
+                    </Typography>
+                    <div className="flex flex-col gap-2">
+                      {gift.reservedByList.map((res, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-white/60 dark:bg-slate-900/40 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
+                          <div>
+                            <Typography variant="body2" className="font-bold text-slate-800 dark:text-slate-200">{res.name}</Typography>
+                            <Typography variant="caption" className="text-slate-500">{res.email || 'Sin correo'}</Typography>
+                          </div>
+                          <Button size="small" color="error" variant="text" onClick={() => handleRemoveIndividual(gift.id, idx)} className="font-bold min-w-0 px-3">
+                            Quitar
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
