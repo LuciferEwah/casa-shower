@@ -51,7 +51,7 @@ export default function LandingPage() {
 
   return (
     <MuiThemeProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+      <div className="min-h-screen bg-[#0b0514] text-slate-200 font-sans flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
         
         {/* Ambient Glows for Glassmorphism */}
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-400/30 dark:bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
