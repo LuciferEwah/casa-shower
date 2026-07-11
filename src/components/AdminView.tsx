@@ -5,7 +5,7 @@ import { Gift, Settings } from '@/types';
 import { deleteGift, unreserveGift, adminRemoveReservationIndex, adminRemoveReservationByEmail } from '@/app/actions/giftActions';
 import { updateEventSettings } from '@/app/actions/eventActions';
 import { GiftForm } from './GiftForm';
-import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 
 export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift[], settings: Settings }) {
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
@@ -14,53 +14,64 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [currentTab, setCurrentTab] = useState<'gifts' | 'analytics' | 'settings'>('gifts');
   const [guestSearch, setGuestSearch] = useState('');
+  
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  const confirmAction = (title: string, message: string, onConfirm: () => void) => {
+    setConfirmDialog({ open: true, title, message, onConfirm });
+  };
 
   const showToast = (message: string, severity: 'success' | 'error') => {
     setToast({ open: true, message, severity });
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Seguro que quieres eliminar este regalo?")) {
+    confirmAction("Eliminar Regalo", "¿Seguro que quieres eliminar este regalo? Esta acción no se puede deshacer.", async () => {
       try {
         await deleteGift(slug, id);
         showToast('Regalo eliminado', 'success');
       } catch (e: unknown) {
         if (e instanceof Error) showToast(e.message, 'error');
       }
-    }
+    });
   };
 
   const handleUnreserve = async (id: string) => {
-    if (confirm("Seguro que quieres liberar TODAS las reservas de este regalo?")) {
+    confirmAction("Liberar Todas las Reservas", "¿Seguro que quieres liberar TODAS las reservas de este regalo? Volverá a estar disponible para todos.", async () => {
       try {
         await unreserveGift(slug, id);
-        showToast('Todas las reservas liberadas', 'success');
+        showToast('Reservas liberadas', 'success');
       } catch (e: unknown) {
         if (e instanceof Error) showToast(e.message, 'error');
       }
-    }
+    });
   };
 
   const handleRemoveIndividual = async (id: string, index: number) => {
-    if (confirm("¿Quieres eliminar 1 reserva de esta persona?")) {
+    confirmAction("Eliminar Reserva Individual", "¿Quieres eliminar 1 reserva de esta persona para este regalo?", async () => {
       try {
         await adminRemoveReservationIndex(slug, id, index);
         showToast('Reserva individual eliminada', 'success');
       } catch (e: unknown) {
         if (e instanceof Error) showToast(e.message, 'error');
       }
-    }
+    });
   };
 
   const handleRemoveAll = async (id: string, identifier: string) => {
-    if (confirm("¿Quieres eliminar TODAS las reservas de esta persona para este regalo?")) {
+    confirmAction("Eliminar Todas las Reservas", "¿Quieres eliminar TODAS las reservas de esta persona para este regalo?", async () => {
       try {
         await adminRemoveReservationByEmail(slug, id, identifier);
         showToast('Todas las reservas eliminadas', 'success');
       } catch (e: unknown) {
         if (e instanceof Error) showToast(e.message, 'error');
       }
-    }
+    });
   };
 
   const getGroupedReservations = (list: { name: string, email?: string, animal?: string }[]) => {
@@ -371,6 +382,45 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
           {toast.message}
         </Alert>
       </Snackbar>
+
+      <Dialog 
+        open={confirmDialog.open} 
+        onClose={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
+        PaperProps={{
+          className: "rounded-[2rem] p-4 sm:p-6 bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800",
+          elevation: 0
+        }}
+      >
+        <DialogTitle className="font-bold text-slate-800 dark:text-slate-100 text-xl pb-2">
+          {confirmDialog.title}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText className="text-slate-600 dark:text-slate-400 font-medium">
+            {confirmDialog.message}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions className="px-6 pb-4 pt-4 gap-3">
+          <Button 
+            onClick={() => setConfirmDialog(prev => ({ ...prev, open: false }))} 
+            color="inherit" 
+            className="font-bold rounded-full px-6 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={() => {
+              confirmDialog.onConfirm();
+              setConfirmDialog(prev => ({ ...prev, open: false }));
+            }} 
+            color="error" 
+            variant="contained" 
+            className="font-bold rounded-full px-8 py-2 shadow-md hover:shadow-lg"
+            autoFocus
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </section>
   );
 }
