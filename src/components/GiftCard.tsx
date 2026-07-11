@@ -195,18 +195,20 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
           }
         }}
       >
-        <div className="relative flex justify-center items-center p-4 sm:p-8">
-          <Button 
-            onClick={() => setImageModalOpen(false)} 
-            className="absolute top-0 right-0 sm:top-4 sm:right-4 min-w-0 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white z-50 shadow-md backdrop-blur-sm"
-          >
-            ✕
-          </Button>
-          <img 
-            src={gift.image} 
-            alt={gift.name} 
-            className="max-h-[85vh] w-auto object-contain rounded-2xl shadow-2xl" 
-          />
+        <div className="flex justify-center items-center p-2 sm:p-8">
+          <div className="relative inline-block max-w-full">
+            <button 
+              onClick={() => setImageModalOpen(false)} 
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 flex items-center justify-center w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold z-50 shadow-md backdrop-blur-sm border border-white/20 transition-colors"
+            >
+              ✕
+            </button>
+            <img 
+              src={gift.image} 
+              alt={gift.name} 
+              className="max-h-[85vh] max-w-full object-contain rounded-xl sm:rounded-2xl shadow-2xl" 
+            />
+          </div>
         </div>
       </Dialog>
     </Card>
