@@ -10,6 +10,7 @@ import { getGiftCategory, categoryLabels } from '@/lib/categories';
 export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gift, guestIdentity?: GuestIdentity }) {
   const [loading, setLoading] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
 
   const showToast = (message: string, severity: 'success' | 'error' | 'warning') => {
@@ -32,7 +33,7 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
     
     setLoading(true);
     try {
-      const res = await reserveGift(slug, gift.id, guestIdentity.name, guestIdentity.lastname, guestIdentity.email);
+      const res = await reserveGift(slug, gift.id, guestIdentity.name, guestIdentity.lastname, guestIdentity.email, selectedQuantity);
       if (res.success) {
         showToast(`¡Reservado exitosamente!`, 'success');
       }
@@ -133,6 +134,27 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
                 </Box>
               ) : (
                 <div className="flex flex-col gap-3">
+                  {(!reservedByMe && (gift.unlimited || needed - count > 1)) && (
+                    <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
+                      <Typography variant="body2" className="font-bold text-slate-700 dark:text-slate-300">
+                        Cantidad a reservar:
+                      </Typography>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          disabled={selectedQuantity <= 1}
+                          onClick={() => setSelectedQuantity(prev => prev - 1)}
+                          className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-30 transition-colors"
+                        >-</button>
+                        <Typography className="font-bold w-4 text-center">{selectedQuantity}</Typography>
+                        <button 
+                          disabled={!gift.unlimited && selectedQuantity >= needed - count}
+                          onClick={() => setSelectedQuantity(prev => prev + 1)}
+                          className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-30 transition-colors"
+                        >+</button>
+                      </div>
+                    </div>
+                  )}
+
                   <Button 
                     fullWidth 
                     variant="contained" 

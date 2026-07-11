@@ -25,7 +25,7 @@ export function GuestView({ slug, gifts }: { slug: string, gifts: Gift[] }) {
   // Filter & Sort states
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<GiftCategory | 'all'>('all');
-  const [sortOrder, setSortOrder] = useState<'default' | 'price_asc' | 'price_desc'>('default');
+  const [sortOrder, setSortOrder] = useState<'default' | 'price_asc' | 'price_desc'>('price_asc');
 
   useEffect(() => {
     const saved = localStorage.getItem('casa_shower_guest');

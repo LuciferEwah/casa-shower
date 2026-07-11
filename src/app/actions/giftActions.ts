@@ -5,7 +5,7 @@ import { checkAdmin } from './adminActions';
 import { Gift } from '@/types';
 
 // For guest (reserve)
-export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string, guestEmail: string) {
+export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string, guestEmail: string, quantity: number = 1) {
   if (!guestName || !guestLastname) throw new Error("Nombre requerido");
   if (!guestEmail) throw new Error("Correo requerido");
   const fullName = `${guestName} ${guestLastname}`;
@@ -20,15 +20,16 @@ export async function reserveGift(slug: string, id: string, guestName: string, g
     const neededQuantity = data.neededQuantity || 1;
     const reservedCount = data.reservedCount || 0;
     
-    if (!data.unlimited && reservedCount >= neededQuantity) {
-      throw new Error("Agotado");
+    if (!data.unlimited && reservedCount + quantity > neededQuantity) {
+      throw new Error(`Solo quedan ${neededQuantity - reservedCount} unidades disponibles`);
     }
 
     const prevList = data.reservedByList || [];
+    const newReservations = Array(quantity).fill({ name: fullName, animal, email: guestEmail });
     
     transaction.update(giftRef, {
-      reservedCount: reservedCount + 1,
-      reservedByList: [...prevList, { name: fullName, animal, email: guestEmail }],
+      reservedCount: reservedCount + quantity,
+      reservedByList: [...prevList, ...newReservations],
       reservedBy: fullName, // backward compatibility
       reservedByAnimal: animal,
       reservedByEmail: guestEmail
