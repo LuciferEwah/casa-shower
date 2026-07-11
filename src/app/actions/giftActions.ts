@@ -159,3 +159,49 @@ export async function adminRemoveReservationIndex(slug: string, id: string, inde
   return { success: true };
 }
 
+// For Admin (remove all reservations of a specific email/name for a gift)
+export async function adminRemoveReservationByEmail(slug: string, id: string, identifier: string) {
+  if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
+  
+  const giftRef = adminDb.collection(`events/${slug}/gifts`).doc(id);
+  
+  await adminDb.runTransaction(async (transaction) => {
+    const giftDoc = await transaction.get(giftRef);
+    if (!giftDoc.exists) throw new Error("Regalo no encontrado");
+    const data = giftDoc.data()!;
+    
+    const prevList = data.reservedByList || [];
+    
+    // Filter out all reservations matching the identifier (email or name if email is not present)
+    const newList = prevList.filter((r: { name: string, email?: string }) => {
+      const rKey = r.email ? r.email.toLowerCase() : r.name.toLowerCase();
+      return rKey !== identifier.toLowerCase();
+    });
+    
+    const removedCount = prevList.length - newList.length;
+    if (removedCount === 0) {
+      throw new Error("No se encontraron reservas para este usuario");
+    }
+
+    const newCount = Math.max(0, (data.reservedCount || 0) - removedCount);
+    
+    const updates: Record<string, unknown> = {
+      reservedCount: newCount,
+      reservedByList: newList
+    };
+    
+    if (newCount === 0) {
+      updates.reservedBy = null;
+      updates.reservedByAnimal = null;
+      updates.reservedByEmail = null;
+    } else {
+      updates.reservedBy = newList[0].name;
+      updates.reservedByAnimal = newList[0].animal;
+      updates.reservedByEmail = newList[0].email;
+    }
+    
+    transaction.update(giftRef, updates);
+  });
+
+  return { success: true };
+}

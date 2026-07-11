@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Gift, Settings } from '@/types';
-import { deleteGift, unreserveGift, adminRemoveReservationIndex } from '@/app/actions/giftActions';
+import { deleteGift, unreserveGift, adminRemoveReservationIndex, adminRemoveReservationByEmail } from '@/app/actions/giftActions';
 import { updateEventSettings } from '@/app/actions/eventActions';
 import { GiftForm } from './GiftForm';
 import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert } from '@mui/material';
@@ -41,14 +41,38 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   };
 
   const handleRemoveIndividual = async (id: string, index: number) => {
-    if (confirm("Seguro que quieres eliminar esta reserva específica?")) {
+    if (confirm("¿Quieres eliminar 1 reserva de esta persona?")) {
       try {
         await adminRemoveReservationIndex(slug, id, index);
-        showToast('Reserva eliminada', 'success');
+        showToast('Reserva individual eliminada', 'success');
       } catch (e: unknown) {
         if (e instanceof Error) showToast(e.message, 'error');
       }
     }
+  };
+
+  const handleRemoveAll = async (id: string, identifier: string) => {
+    if (confirm("¿Quieres eliminar TODAS las reservas de esta persona para este regalo?")) {
+      try {
+        await adminRemoveReservationByEmail(slug, id, identifier);
+        showToast('Todas las reservas eliminadas', 'success');
+      } catch (e: unknown) {
+        if (e instanceof Error) showToast(e.message, 'error');
+      }
+    }
+  };
+
+  const getGroupedReservations = (list: { name: string, email?: string, animal?: string }[]) => {
+    const groups: Record<string, { name: string, email?: string, animal?: string, count: number, indices: number[] }> = {};
+    list.forEach((res, idx) => {
+      const key = res.email ? res.email.toLowerCase() : res.name.toLowerCase();
+      if (!groups[key]) {
+        groups[key] = { ...res, count: 0, indices: [] };
+      }
+      groups[key].count += 1;
+      groups[key].indices.push(idx);
+    });
+    return Object.values(groups);
   };
 
   const handleSaveSettings = async () => {
@@ -285,15 +309,24 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                       Detalle de Reservas
                     </Typography>
                     <div className="flex flex-col gap-2">
-                      {gift.reservedByList.map((res, idx) => (
-                        <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-white/60 dark:bg-slate-900/40 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
+                      {getGroupedReservations(gift.reservedByList).map((res) => (
+                        <div key={res.email || res.name} className="flex justify-between items-center p-2 rounded-lg bg-white/60 dark:bg-slate-900/40 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
                           <div>
-                            <Typography variant="body2" className="font-bold text-slate-800 dark:text-slate-200">{res.name}</Typography>
+                            <Typography variant="body2" className="font-bold text-slate-800 dark:text-slate-200">
+                              {res.name} {res.count > 1 && <span className="text-purple-600 dark:text-purple-400 ml-1">(x{res.count})</span>}
+                            </Typography>
                             <Typography variant="caption" className="text-slate-500">{res.email || 'Sin correo'}</Typography>
                           </div>
-                          <Button size="small" color="error" variant="text" onClick={() => handleRemoveIndividual(gift.id, idx)} className="font-bold min-w-0 px-3">
-                            Quitar
-                          </Button>
+                          <div className="flex flex-col sm:flex-row gap-1">
+                            <Button size="small" color="warning" variant="text" onClick={() => handleRemoveIndividual(gift.id, res.indices[res.indices.length - 1])} className="font-bold min-w-0 px-2 text-[10px] sm:text-xs">
+                              Quitar 1
+                            </Button>
+                            {res.count > 1 && (
+                              <Button size="small" color="error" variant="text" onClick={() => handleRemoveAll(gift.id, res.email || res.name)} className="font-bold min-w-0 px-2 text-[10px] sm:text-xs">
+                                Quitar Todo
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
