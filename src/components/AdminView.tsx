@@ -5,7 +5,7 @@ import { Gift, Settings } from '@/types';
 import { deleteGift, unreserveGift, adminRemoveReservationIndex, adminRemoveReservationByEmail } from '@/app/actions/giftActions';
 import { updateEventSettings } from '@/app/actions/eventActions';
 import { GiftForm } from './GiftForm';
-import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 
 export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift[], settings: Settings }) {
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
@@ -13,6 +13,7 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   const [formData, setFormData] = useState(settings);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [currentTab, setCurrentTab] = useState<'gifts' | 'analytics' | 'settings'>('gifts');
+  const [guestSearch, setGuestSearch] = useState('');
 
   const showToast = (message: string, severity: 'success' | 'error') => {
     setToast({ open: true, message, severity });
@@ -122,6 +123,11 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   
   const uniqueGuests = Array.from(guestsMap.entries()).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.total - a.total);
 
+  const filteredUniqueGuests = uniqueGuests.filter(g => 
+    g.name.toLowerCase().includes(guestSearch.toLowerCase()) || 
+    (g.email && g.email.toLowerCase().includes(guestSearch.toLowerCase()))
+  );
+
   return (
     <section className="admin-view w-full max-w-4xl mx-auto">
       
@@ -167,28 +173,49 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
           </div>
 
           <div className="p-6 sm:p-8 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl">
-            <Typography variant="h6" className="font-bold mb-6 text-purple-900 dark:text-purple-100">Detalle de Invitados</Typography>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <Typography variant="h6" className="font-bold text-purple-900 dark:text-purple-100">Detalle de Invitados</Typography>
+              <TextField 
+                size="small"
+                variant="outlined"
+                placeholder="Buscar por nombre o correo..."
+                value={guestSearch}
+                onChange={(e) => setGuestSearch(e.target.value)}
+                className="bg-white/40 dark:bg-slate-950/40 rounded-xl w-full sm:w-64"
+              />
+            </div>
+            
             {uniqueGuests.length === 0 ? (
               <Typography className="text-slate-500 text-center py-8">Aún no hay invitados que hayan reservado regalos.</Typography>
+            ) : filteredUniqueGuests.length === 0 ? (
+              <Typography className="text-slate-500 text-center py-8">No se encontraron invitados con esa búsqueda.</Typography>
             ) : (
-              <div className="flex flex-col gap-4">
-                {uniqueGuests.map(guest => (
-                  <div key={guest.name} className="p-4 sm:p-5 rounded-[1.5rem] bg-white/60 dark:bg-slate-800/60 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm border border-white/30 dark:border-slate-700/30">
-                    <div>
-                      <Typography className="font-bold text-slate-800 dark:text-slate-100 text-lg">
-                        {guest.name}
-                        {guest.email && <span className="text-sm font-normal text-slate-500 ml-2">({guest.email})</span>}
-                      </Typography>
-                      <Typography variant="body2" className="text-purple-600 dark:text-purple-400 font-medium">
-                        {guest.items.join(', ')}
-                      </Typography>
-                    </div>
-                    <Typography className="font-bold text-xl text-slate-800 dark:text-slate-100">
-                      ${guest.total.toLocaleString('es-CL')}
-                    </Typography>
-                  </div>
-                ))}
-              </div>
+              <TableContainer component={Paper} className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+                <Table size="medium">
+                  <TableHead className="bg-purple-100/50 dark:bg-purple-900/20">
+                    <TableRow>
+                      <TableCell className="font-bold text-purple-900 dark:text-purple-100">Nombre</TableCell>
+                      <TableCell className="font-bold text-purple-900 dark:text-purple-100">Correo</TableCell>
+                      <TableCell className="font-bold text-purple-900 dark:text-purple-100">Regalos Reservados</TableCell>
+                      <TableCell align="right" className="font-bold text-purple-900 dark:text-purple-100">Total Gastado</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredUniqueGuests.map((guest) => (
+                      <TableRow key={guest.name} className="hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors">
+                        <TableCell className="font-medium text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">{guest.name}</TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50">{guest.email || '-'}</TableCell>
+                        <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50 max-w-[200px] truncate" title={guest.items.join(', ')}>
+                          {guest.items.join(', ')}
+                        </TableCell>
+                        <TableCell align="right" className="font-bold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">
+                          ${guest.total.toLocaleString('es-CL')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             )}
           </div>
         </div>
