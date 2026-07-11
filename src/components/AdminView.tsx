@@ -386,10 +386,7 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
       <Dialog 
         open={confirmDialog.open} 
         onClose={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
-        PaperProps={{
-          className: "rounded-[2rem] p-4 sm:p-6 bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800",
-          elevation: 0
-        }}
+        classes={{ paper: "rounded-[2rem] p-4 sm:p-6 bg-white dark:bg-slate-900 shadow-2xl border border-slate-100 dark:border-slate-800 m-4" }}
       >
         <DialogTitle className="font-bold text-slate-800 dark:text-slate-100 text-xl pb-2">
           {confirmDialog.title}
