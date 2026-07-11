@@ -5,6 +5,7 @@ import { Gift } from '@/types';
 import { reserveGift } from '@/app/actions/giftActions';
 import { Card, CardMedia, CardContent, Typography, Button, Box, Chip, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { GuestIdentity } from './GuestView';
+import { getGiftCategory, categoryLabels } from '@/lib/categories';
 
 export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gift, guestIdentity?: GuestIdentity }) {
   const [loading, setLoading] = useState(false);
@@ -44,10 +45,18 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
   const needed = gift.neededQuantity || 1;
   const available = gift.unlimited ? true : count < needed;
   const reservedByMe = isReservedByMe();
+  
+  const category = getGiftCategory(gift.price);
+  const catStyle = categoryLabels[category];
 
   return (
     <Card className={`relative overflow-hidden rounded-[2rem] border transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 ${!available && !reservedByMe ? 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 grayscale-[50%]' : 'bg-white/70 dark:bg-slate-900/70 border-white/60 dark:border-slate-700/50 backdrop-blur-xl'}`}>
       
+      {/* Category Badge */}
+      <div className={`absolute top-4 left-4 z-10 px-3 py-1 rounded-full text-xs font-bold text-white shadow-md border bg-gradient-to-r ${catStyle.color} ${catStyle.border}`}>
+        {catStyle.label}
+      </div>
+
       {!available && !reservedByMe && (
         <div className="absolute top-4 right-4 z-10">
           <Chip label="Agotado" color="default" className="font-bold bg-slate-200/90 dark:bg-slate-700/90 text-slate-600 dark:text-slate-300 shadow-sm backdrop-blur-sm" />
