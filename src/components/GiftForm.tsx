@@ -55,18 +55,24 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
         <TextField label="Link de compra (Opcional)" fullWidth value={formLink} onChange={e => setFormLink(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl sm:col-span-2" />
       </div>
       
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/30 dark:bg-slate-950/30 p-4 rounded-2xl border border-white/40 dark:border-slate-800/50">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8">
         <FormControlLabel
-          control={<Switch checked={formUnlimited} onChange={e => setFormUnlimited(e.target.checked)} color="primary" />}
-          label={<Typography className="font-semibold text-slate-700 dark:text-slate-300">Regalo Ilimitado (Todos pueden reservar)</Typography>}
-          className="ml-1 w-full sm:w-auto"
+          control={
+            <Switch 
+              checked={formUnlimited} 
+              onChange={(e) => setFormUnlimited(e.target.checked)} 
+              color="secondary"
+            />
+          }
+          label={<Typography className="text-slate-600 dark:text-slate-300 font-medium select-none">Regalo ilimitado (Todos pueden reservar)</Typography>}
+          className="w-full sm:w-auto m-0"
         />
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
           {editGift && (
             <Button 
               variant="outlined" 
               color="inherit" 
-              className="rounded-full px-6 py-2 sm:py-3 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 w-full sm:w-auto"
+              className="rounded-full px-8 py-3.5 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 w-full sm:w-auto shadow-sm"
               onClick={onSaved}
             >
               Cancelar
@@ -75,7 +81,7 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
           <Button 
             variant="contained" 
             color="primary" 
-            className="rounded-full px-8 py-2 sm:py-3 font-bold shadow-md hover:shadow-lg w-full sm:w-auto"
+            className="rounded-full px-10 py-3.5 font-bold shadow-md hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 w-full sm:w-auto"
             onClick={handleSave}
           >
             {editGift ? 'Guardar Cambios' : 'Agregar Regalo'}
