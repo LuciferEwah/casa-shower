@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { Gift } from '@/types';
 import { reserveGift, cancelReservation } from '@/app/actions/giftActions';
-import { Card, CardMedia, CardContent, Typography, Button, Box, Chip, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, Button, Box, Chip, CircularProgress, Snackbar, Alert, Dialog } from '@mui/material';
 import { GuestIdentity } from './GuestView';
 import { getGiftCategory, categoryLabels } from '@/lib/categories';
 
 export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gift, guestIdentity?: GuestIdentity }) {
   const [loading, setLoading] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
 
   const showToast = (message: string, severity: 'success' | 'error' | 'warning') => {
@@ -89,7 +90,8 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
           height="220"
           image={gift.image}
           alt={gift.name}
-          className="h-[220px] object-cover"
+          onClick={() => setImageModalOpen(true)}
+          className="h-[220px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
         />
       ) : (
         <div className="h-[220px] w-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-7xl">
@@ -178,6 +180,29 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
           {toast.message}
         </Alert>
       </Snackbar>
+
+      {/* Full Image Modal */}
+      <Dialog 
+        open={imageModalOpen} 
+        onClose={() => setImageModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ className: "bg-transparent shadow-none" }}
+      >
+        <div className="relative flex justify-center items-center p-4 sm:p-8">
+          <Button 
+            onClick={() => setImageModalOpen(false)} 
+            className="absolute top-0 right-0 sm:top-4 sm:right-4 min-w-0 w-10 h-10 rounded-full bg-black/50 hover:bg-black/70 text-white z-50 shadow-md backdrop-blur-sm"
+          >
+            ✕
+          </Button>
+          <img 
+            src={gift.image} 
+            alt={gift.name} 
+            className="max-h-[85vh] w-auto object-contain rounded-2xl shadow-2xl" 
+          />
+        </div>
+      </Dialog>
     </Card>
   );
 }
