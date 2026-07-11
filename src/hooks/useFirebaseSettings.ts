@@ -5,11 +5,11 @@ import { Settings } from '@/types';
 
 export function useFirebaseSettings() {
   const [settings, setSettings] = useState<Settings>({
-    babyName: 'Kai',
+    babyName: 'Luci',
     eventDate: '',
     eventPlace: '',
     customColor: '#4a4a4a',
-    babyEmoji: '👶'
+    babyEmoji: '🏠'
   });
 
   useEffect(() => {

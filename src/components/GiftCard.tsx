@@ -26,7 +26,7 @@ export function GiftCard({ gift }: { gift: Gift }) {
 
   return (
     <Card 
-      className="rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 flex flex-col"
+      className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full"
       elevation={0}
     >
       {gift.image ? (
@@ -35,28 +35,28 @@ export function GiftCard({ gift }: { gift: Gift }) {
           height="200"
           image={gift.image}
           alt={gift.name}
-          className="h-56 object-cover rounded-t-[2rem]"
+          className="h-48 sm:h-56 object-cover rounded-t-2xl"
         />
       ) : (
-        <div className="h-56 bg-purple-100/50 dark:bg-purple-900/20 flex items-center justify-center rounded-t-[2rem]">
-          <span className="text-7xl drop-shadow-md">🎁</span>
+        <div className="h-48 sm:h-56 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center rounded-t-2xl">
+          <span className="text-6xl sm:text-7xl opacity-50">🎁</span>
         </div>
       )}
-      <CardContent className="flex-grow flex flex-col p-6">
-        <Typography variant="h6" className="font-bold text-slate-800 dark:text-slate-100 line-clamp-1 mb-1">
+      <CardContent className="flex-grow flex flex-col p-5 sm:p-6">
+        <Typography variant="h6" className="font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2 mb-1">
           {gift.name}
         </Typography>
-        <Typography variant="body1" className="text-purple-600 dark:text-purple-400 font-bold mb-4 flex items-center">
+        <Typography variant="body1" className="text-zinc-700 dark:text-zinc-300 font-bold mb-4 flex items-center flex-wrap gap-2">
           ${gift.price} 
           {gift.unlimited && (
-            <Chip size="small" label="Ilimitado" color="secondary" className="ml-3 font-bold px-1" />
+            <Chip size="small" label="Ilimitado" variant="outlined" className="font-bold border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400" />
           )}
         </Typography>
         
         <div className="mt-auto pt-2">
           {isReserved ? (
-            <Box className="p-4 bg-fuchsia-50/80 dark:bg-fuchsia-900/30 rounded-2xl border border-fuchsia-100 dark:border-fuchsia-800 backdrop-blur-sm shadow-inner mt-4">
-              <Typography variant="body2" className="text-fuchsia-800 dark:text-fuchsia-200 font-semibold text-center">
+            <Box className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 mt-2">
+              <Typography variant="body2" className="text-zinc-700 dark:text-zinc-300 font-medium text-center">
                 Reservado por {gift.unlimited ? gift.reservedByList?.map(r => r.animal).join(', ') : gift.reservedByAnimal}
               </Typography>
             </Box>
@@ -68,7 +68,7 @@ export function GiftCard({ gift }: { gift: Gift }) {
                 placeholder="Tu nombre" 
                 value={guestName} 
                 onChange={e => setGuestName(e.target.value)} 
-                className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
+                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
                 InputProps={{ className: 'rounded-xl' }}
               />
               <TextField 
@@ -77,15 +77,14 @@ export function GiftCard({ gift }: { gift: Gift }) {
                 placeholder="Tu apellido" 
                 value={guestLastname} 
                 onChange={e => setGuestLastname(e.target.value)} 
-                className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
+                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
                 InputProps={{ className: 'rounded-xl' }}
               />
               <Button 
                 fullWidth 
                 variant="contained" 
                 color="primary"
-                size="large"
-                className="rounded-xl shadow-md hover:shadow-lg py-2 mt-1 font-bold"
+                className="rounded-xl py-2 mt-1 font-bold bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black"
                 onClick={handleReserve}
               >
                 Lo llevo yo!

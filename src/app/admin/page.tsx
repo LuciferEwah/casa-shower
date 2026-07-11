@@ -40,8 +40,8 @@ export default function AdminPage() {
 
   if (checking || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <Typography variant="h5" className="text-purple-600 font-bold animate-pulse">
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+        <Typography variant="h6" className="text-zinc-900 dark:text-zinc-100 font-bold animate-pulse">
           Cargando Admin...
         </Typography>
       </div>
@@ -50,17 +50,13 @@ export default function AdminPage() {
 
   return (
     <MuiThemeProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans relative overflow-x-hidden transition-colors duration-300 pb-20">
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans relative overflow-x-hidden transition-colors duration-300 pb-20">
         
-        {/* Ambient Glows */}
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-400/30 dark:bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-fuchsia-400/30 dark:bg-fuchsia-600/20 rounded-full blur-[100px] pointer-events-none" />
-        
-        <Container maxWidth="lg" className="relative z-10 pt-16">
+        <Container maxWidth="lg" className="relative z-10 pt-8 sm:pt-16 px-4 sm:px-6">
           
           {!isAdmin ? (
-            <div className="max-w-md mx-auto mt-20 p-8 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl text-center">
-              <Typography variant="h5" className="font-bold mb-6 text-purple-900 dark:text-purple-100">
+            <div className="max-w-sm mx-auto mt-10 sm:mt-20 p-6 sm:p-8 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm text-center">
+              <Typography variant="h5" className="font-bold mb-6 text-zinc-900 dark:text-zinc-100">
                 Acceso Administrador
               </Typography>
               <TextField 
@@ -70,7 +66,7 @@ export default function AdminPage() {
                 variant="outlined"
                 value={pin}
                 onChange={e => setPin(e.target.value)}
-                className="bg-white/40 dark:bg-slate-950/40 rounded-2xl mb-6"
+                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl mb-6"
               />
               <Button 
                 fullWidth
@@ -78,32 +74,32 @@ export default function AdminPage() {
                 color="primary" 
                 size="large"
                 onClick={handleLogin} 
-                className="rounded-full py-3 font-bold shadow-md hover:shadow-lg mb-4"
+                className="rounded-full py-3 font-bold mb-6"
               >
                 Entrar
               </Button>
-              <Link href="/" className="text-purple-600 hover:text-purple-800 dark:text-purple-400 font-semibold transition-colors">
+              <Link href="/" className="text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 font-medium transition-colors text-sm">
                 Volver a la Lista de Regalos
               </Link>
             </div>
           ) : (
             <>
-              <header className="mb-12 flex flex-col md:flex-row justify-between items-center bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/50 dark:border-slate-700/50 p-6 rounded-[2rem] shadow-sm">
-                <div className="mb-4 md:mb-0 text-center md:text-left">
-                  <Typography variant="h4" className="font-bold text-purple-950 dark:text-purple-100">
+              <header className="mb-8 sm:mb-12 flex flex-col md:flex-row justify-between items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl shadow-sm gap-4">
+                <div className="text-center md:text-left">
+                  <Typography variant="h5" className="font-bold text-zinc-950 dark:text-zinc-100">
                     Panel de Admin
                   </Typography>
-                  <Typography variant="body1" className="text-slate-600 dark:text-slate-400 font-medium">
-                    {settings?.babyEmoji || '👶'} Baby Shower de {settings?.babyName || 'Kai'}
+                  <Typography variant="body2" className="text-zinc-500 dark:text-zinc-400 font-medium mt-1">
+                    {settings?.babyEmoji || '🏠'} Casa Shower de {settings?.babyName || 'Luci'}
                   </Typography>
                 </div>
-                <div className="flex gap-4">
-                  <Link href="/">
-                    <Button variant="outlined" color="primary" className="rounded-full font-bold px-6 bg-white/50 dark:bg-slate-800/50">
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <Link href="/" className="w-full sm:w-auto">
+                    <Button fullWidth variant="outlined" color="inherit" className="rounded-full font-bold px-6 border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
                       Ver Lista
                     </Button>
                   </Link>
-                  <Button variant="contained" color="error" onClick={handleLogout} className="rounded-full font-bold px-6 shadow-md">
+                  <Button fullWidth variant="contained" sx={{ bgcolor: '#ef4444', color: 'white', '&:hover': { bgcolor: '#dc2626' } }} onClick={handleLogout} className="rounded-full font-bold px-6 sm:w-auto">
                     Salir
                   </Button>
                 </div>

@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Baby Shower",
-  description: "Baby Shower Gift Registry",
+  title: "Casa Shower Luci",
+  description: "Casa Shower Gift Registry",
 };
 
 export default function RootLayout({
