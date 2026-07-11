@@ -11,6 +11,7 @@ export function useFirebaseSettings() {
     customColor: '#4a4a4a',
     babyEmoji: '🏠'
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const settingsRef = doc(db, 'config', 'settings');
@@ -18,10 +19,14 @@ export function useFirebaseSettings() {
       if (snap.exists()) {
         setSettings(snap.data() as Settings);
       }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching settings:", error);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  return { settings };
+  return { settings, loading };
 }
