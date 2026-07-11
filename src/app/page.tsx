@@ -51,31 +51,36 @@ export default function LandingPage() {
 
   return (
     <MuiThemeProvider>
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans flex items-center justify-center p-4">
-        <Container maxWidth="sm">
-          <Box className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] shadow-xl border border-zinc-200 dark:border-zinc-800 text-center">
-            <Typography variant="h3" className="font-bold mb-2">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
+        
+        {/* Ambient Glows for Glassmorphism */}
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-400/30 dark:bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-fuchsia-400/30 dark:bg-fuchsia-600/20 rounded-full blur-[100px] pointer-events-none" />
+
+        <Container maxWidth="sm" className="relative z-10">
+          <Box className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-8 rounded-[2rem] shadow-xl border border-white/60 dark:border-slate-700/50 text-center">
+            <Typography variant="h3" className="font-bold mb-2 text-purple-950 dark:text-purple-100">
               🎁 Casa Shower
             </Typography>
-            <Typography variant="body1" className="text-zinc-500 dark:text-zinc-400 mb-8">
+            <Typography variant="body1" className="text-purple-700 dark:text-purple-300 mb-8 font-medium">
               Crea tu lista de regalos en segundos
             </Typography>
 
             {error && (
-              <Box className="bg-red-50 text-red-600 p-3 rounded-xl mb-6 text-sm">
+              <Box className="bg-red-50/80 text-red-600 p-3 rounded-xl mb-6 text-sm border border-red-200">
                 {error}
               </Box>
             )}
 
             <div className="flex flex-col gap-5 text-left">
               <TextField
-                label="Nombre del Bebe (o del Evento)"
+                label="Nombre del Evento"
                 variant="outlined"
                 fullWidth
                 value={babyName}
                 onChange={(e) => setBabyName(e.target.value)}
-                placeholder="Ej: Kai"
-                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
+                placeholder="Ej: Luci"
+                className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
               />
               
               <TextField
@@ -84,9 +89,9 @@ export default function LandingPage() {
                 fullWidth
                 value={slug}
                 onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                placeholder="ej: baby-shower-kai"
+                placeholder="ej: casa-luci"
                 helperText={`Tu link será: casashower.com/s/${slug || '...'}`}
-                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
+                className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
               />
 
               <TextField
@@ -97,7 +102,7 @@ export default function LandingPage() {
                 value={adminPin}
                 onChange={(e) => setAdminPin(e.target.value)}
                 placeholder="Min 4 caracteres"
-                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
+                className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
               />
 
               <Button
@@ -107,7 +112,7 @@ export default function LandingPage() {
                 fullWidth
                 onClick={handleCreate}
                 disabled={loading}
-                className="rounded-full py-3.5 font-bold mt-2 bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black disabled:opacity-70"
+                className="rounded-full py-3.5 font-bold mt-2 shadow-md hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 disabled:opacity-70"
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : 'Crear mi Casa Shower'}
               </Button>

@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase-admin';
 import * as bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
+import { Settings } from '@/types';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'super-secret-fallback-key');
 
@@ -52,5 +53,18 @@ export async function createEvent(slug: string, babyName: string, adminPin: stri
     maxAge: 60 * 60 * 24 * 30
   });
 
+  return { success: true };
+}
+
+export async function updateEventSettings(slug: string, newSettings: Partial<Settings>) {
+  const { checkAdmin } = await import('./adminActions');
+  const isAuth = await checkAdmin(slug);
+  if (!isAuth) throw new Error("No autorizado");
+  
+  const eventRef = adminDb.collection('events').doc(slug);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { adminPinHash: _1, createdAt: _2, ...safeSettings } = newSettings as any;
+  
+  await eventRef.update(safeSettings);
   return { success: true };
 }

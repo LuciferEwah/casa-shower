@@ -4,14 +4,17 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
-    primary: { main: '#000000' }, // Black
-    secondary: { main: '#475569' }, // Slate 600
+    primary: { main: '#9333ea' }, // purple-600
+    secondary: { main: '#c026d3' }, // fuchsia-600
+    background: {
+      default: 'transparent',
+    },
   },
   typography: {
     fontFamily: '"Outfit", "Inter", sans-serif',
   },
   shape: {
-    borderRadius: 8,
+    borderRadius: 16,
   },
   components: {
     MuiButton: {
@@ -20,10 +23,6 @@ const theme = createTheme({
           textTransform: 'none',
           borderRadius: '9999px',
           fontWeight: 600,
-          boxShadow: 'none',
-          '&:hover': {
-            boxShadow: 'none',
-          }
         },
       },
     },
@@ -31,7 +30,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: '12px',
+            borderRadius: '16px',
+            backgroundColor: 'rgba(255, 255, 255, 0.4)',
           },
         },
       },

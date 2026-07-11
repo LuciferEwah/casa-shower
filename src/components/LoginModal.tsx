@@ -30,12 +30,24 @@ export function LoginModal({ slug, open, onClose, onSuccess }: LoginModalProps) 
   };
 
   return (
-    <Dialog open={open} onClose={onClose} sx={{ '& .MuiDialog-paper': { borderRadius: '1rem' } }}>
-      <DialogTitle className="font-bold">Acceso Administrador</DialogTitle>
-      <DialogContent className="flex flex-col gap-4 mt-2">
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      sx={{ 
+        '& .MuiDialog-paper': { 
+          borderRadius: '2rem', 
+          backgroundColor: 'rgba(255, 255, 255, 0.8)', 
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255,255,255,0.3)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' 
+        } 
+      }}
+    >
+      <DialogTitle className="font-bold text-center text-purple-900 pt-8 pb-2">Acceso Administrador</DialogTitle>
+      <DialogContent className="flex flex-col gap-4 mt-2 px-8 pb-4">
         <TextField
           autoFocus
-          label="PIN"
+          label="PIN de Administrador"
           type="password"
           fullWidth
           value={pin}
@@ -43,12 +55,13 @@ export function LoginModal({ slug, open, onClose, onSuccess }: LoginModalProps) 
           error={!!error}
           helperText={error}
           onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+          className="bg-white/50 rounded-2xl mt-2"
         />
       </DialogContent>
-      <DialogActions className="p-4">
-        <Button onClick={onClose} color="inherit">Cancelar</Button>
-        <Button onClick={handleLogin} variant="contained" disabled={loading} className="bg-black text-white hover:bg-zinc-800">
-          {loading ? <CircularProgress size={24} /> : 'Entrar'}
+      <DialogActions className="p-6 pt-0 justify-center gap-4">
+        <Button onClick={onClose} className="text-slate-500 font-bold px-6 py-2 rounded-full">Cancelar</Button>
+        <Button onClick={handleLogin} variant="contained" color="primary" disabled={loading} className="font-bold px-8 py-2 rounded-full shadow-md">
+          {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
         </Button>
       </DialogActions>
     </Dialog>
