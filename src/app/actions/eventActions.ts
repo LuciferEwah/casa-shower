@@ -30,7 +30,7 @@ export async function createEvent(slug: string, babyName: string, adminPin: stri
       eventDate: '',
       eventPlace: '',
       customColor: '#4a4a4a',
-      babyEmoji: '👶',
+      babyEmoji: '🏠',
       createdAt: new Date().toISOString()
     });
   });

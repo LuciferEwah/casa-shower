@@ -97,7 +97,7 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
             className="bg-white/40 dark:bg-slate-950/40 rounded-2xl"
           />
           <TextField
-            label="Emoji (ej: 👶)"
+            label="Emoji (ej: 🏠)"
             variant="outlined"
             value={formData.babyEmoji}
             onChange={(e) => setFormData({...formData, babyEmoji: e.target.value})}
