@@ -187,7 +187,13 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
         onClose={() => setImageModalOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{ className: "bg-transparent shadow-none" }}
+        sx={{
+          "& .MuiDialog-paper": {
+            backgroundColor: "transparent",
+            boxShadow: "none",
+            backgroundImage: "none"
+          }
+        }}
       >
         <div className="relative flex justify-center items-center p-4 sm:p-8">
           <Button 
