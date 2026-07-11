@@ -1,29 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Gift } from '@/types';
 import { reserveGift } from '@/app/actions/giftActions';
-import { Card, CardMedia, CardContent, Typography, TextField, Button, Box, Chip } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, TextField, Button, Box, Chip, CircularProgress } from '@mui/material';
 
 export function GiftCard({ gift }: { gift: Gift }) {
   const [guestName, setGuestName] = useState('');
   const [guestLastname, setGuestLastname] = useState('');
+  const [hasReserved, setHasReserved] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage if this user reserved this gift
+    const stored = localStorage.getItem('casa_shower_reservations');
+    if (stored) {
+      const reservations = JSON.parse(stored);
+      if (reservations.includes(gift.id)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setHasReserved(true);
+      }
+    }
+  }, [gift.id]);
 
   const handleReserve = async () => {
     if (!guestName || !guestLastname) {
       alert("Por favor ingresa tu nombre y apellido");
       return;
     }
+    setLoading(true);
     try {
-      const res = await reserveGift(gift.id, gift.unlimited, guestName, guestLastname);
-      if (res.success) alert(`Reservado como ${res.animal}!`);
+      const res = await reserveGift(gift.id, guestName, guestLastname);
+      if (res.success) {
+        alert(`Reservado como ${res.animal}!`);
+        const stored = localStorage.getItem('casa_shower_reservations');
+        const reservations = stored ? JSON.parse(stored) : [];
+        reservations.push(gift.id);
+        localStorage.setItem('casa_shower_reservations', JSON.stringify(reservations));
+        setHasReserved(true);
+      }
     } catch (e: unknown) {
       if (e instanceof Error) alert(e.message);
     }
+    setLoading(false);
   };
 
-  const isReserved = gift.reservedBy || (gift.reservedByList && gift.reservedByList.length > 0);
-
+  const needed = gift.neededQuantity || 1;
+  const count = gift.reservedCount || 0;
+  const isSoldOut = !gift.unlimited && count >= needed;
+  
   return (
     <Card 
       className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col h-full"
@@ -46,18 +71,30 @@ export function GiftCard({ gift }: { gift: Gift }) {
         <Typography variant="h6" className="font-bold text-zinc-900 dark:text-zinc-100 line-clamp-2 mb-1">
           {gift.name}
         </Typography>
-        <Typography variant="body1" className="text-zinc-700 dark:text-zinc-300 font-bold mb-4 flex items-center flex-wrap gap-2">
+        <Typography variant="body1" className="text-zinc-700 dark:text-zinc-300 font-bold mb-2 flex items-center flex-wrap gap-2">
           ${gift.price} 
           {gift.unlimited && (
             <Chip size="small" label="Ilimitado" variant="outlined" className="font-bold border-zinc-300 dark:border-zinc-600 text-zinc-600 dark:text-zinc-400" />
           )}
         </Typography>
+
+        {!gift.unlimited && needed > 1 && (
+          <Typography variant="body2" className="text-zinc-500 mb-4 font-medium">
+            Faltan {needed - count} de {needed}
+          </Typography>
+        )}
         
         <div className="mt-auto pt-2">
-          {isReserved ? (
+          {hasReserved ? (
+            <Box className="p-3 sm:p-4 bg-green-50 dark:bg-green-950/30 rounded-xl border border-green-200 dark:border-green-800/50 mt-2">
+              <Typography variant="body2" className="text-green-700 dark:text-green-400 font-medium text-center">
+                🎁 Tú reservaste esto
+              </Typography>
+            </Box>
+          ) : isSoldOut ? (
             <Box className="p-3 sm:p-4 bg-zinc-50 dark:bg-zinc-950 rounded-xl border border-zinc-200 dark:border-zinc-800 mt-2">
               <Typography variant="body2" className="text-zinc-700 dark:text-zinc-300 font-medium text-center">
-                Reservado por {gift.unlimited ? gift.reservedByList?.map(r => r.animal).join(', ') : gift.reservedByAnimal}
+                Agotado
               </Typography>
             </Box>
           ) : (
@@ -84,10 +121,11 @@ export function GiftCard({ gift }: { gift: Gift }) {
                 fullWidth 
                 variant="contained" 
                 color="primary"
-                className="rounded-xl py-2 mt-1 font-bold bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black"
+                disabled={loading}
+                className="rounded-xl py-2 mt-1 font-bold bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black disabled:opacity-50"
                 onClick={handleReserve}
               >
-                Lo llevo yo!
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Lo llevo yo!'}
               </Button>
             </div>
           )}

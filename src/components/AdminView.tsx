@@ -19,9 +19,9 @@ export function AdminView({ gifts }: { gifts: Gift[] }) {
     }
   };
 
-  const handleUnreserve = async (id: string, unlimited: boolean) => {
+  const handleUnreserve = async (id: string) => {
     try {
-      await unreserveGift(id, unlimited);
+      await unreserveGift(id);
     } catch (e: unknown) {
       if (e instanceof Error) alert(e.message);
     }
@@ -69,7 +69,7 @@ export function AdminView({ gifts }: { gifts: Gift[] }) {
                 Eliminar
               </Button>
               {(gift.reservedBy || (gift.reservedByList && gift.reservedByList.length > 0)) && (
-                <Button size="small" variant="contained" color="inherit" className="w-full md:w-auto rounded-full font-bold px-4 shadow-sm bg-zinc-200 hover:bg-zinc-300 text-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-zinc-100" onClick={() => handleUnreserve(gift.id, gift.unlimited)}>
+                <Button size="small" variant="contained" color="inherit" className="w-full md:w-auto rounded-full font-bold px-4 shadow-sm bg-zinc-200 hover:bg-zinc-300 text-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-zinc-100" onClick={() => handleUnreserve(gift.id)}>
                   Liberar
                 </Button>
               )}

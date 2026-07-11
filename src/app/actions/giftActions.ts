@@ -2,32 +2,39 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { checkAdmin } from './adminActions';
+import { Gift } from '@/types';
 
 // For guest (reserve)
-export async function reserveGift(id: string, unlimited: boolean, guestName: string, guestLastname: string) {
+export async function reserveGift(id: string, guestName: string, guestLastname: string) {
   if (!guestName || !guestLastname) throw new Error("Nombre requerido");
   const fullName = `${guestName} ${guestLastname}`;
   const animal = "Osito"; // Mock
   
   const giftRef = adminDb.collection('gifts').doc(id);
   
-  if (unlimited) {
-    const giftDoc = await giftRef.get();
-    const data = giftDoc.data();
-    const prevList = data?.reservedByList || [];
-    await giftRef.update({
-      reservedByList: [...prevList, { name: fullName, animal }]
-    });
-  } else {
-    await giftRef.update({
-      reservedBy: fullName,
+  await adminDb.runTransaction(async (transaction) => {
+    const giftDoc = await transaction.get(giftRef);
+    if (!giftDoc.exists) throw new Error("Regalo no encontrado");
+    const data = giftDoc.data()!;
+    const neededQuantity = data.neededQuantity || 1;
+    const reservedCount = data.reservedCount || 0;
+    
+    if (!data.unlimited && reservedCount >= neededQuantity) {
+      throw new Error("Agotado");
+    }
+
+    const prevList = data.reservedByList || [];
+    
+    transaction.update(giftRef, {
+      reservedCount: reservedCount + 1,
+      reservedByList: [...prevList, { name: fullName, animal }],
+      reservedBy: fullName, // backward compatibility
       reservedByAnimal: animal
     });
-  }
+  });
+
   return { success: true, animal };
 }
-
-import { Gift } from '@/types';
 
 // For Admin
 export async function saveGift(data: Omit<Gift, 'id'>, id?: string) {
@@ -47,14 +54,15 @@ export async function deleteGift(id: string) {
   return { success: true };
 }
 
-export async function unreserveGift(id: string, unlimited: boolean) {
+export async function unreserveGift(id: string) {
   if (!(await checkAdmin())) throw new Error('Unauthorized');
   
   const giftRef = adminDb.collection('gifts').doc(id);
-  if (unlimited) {
-    await giftRef.update({ reservedByList: [] });
-  } else {
-    await giftRef.update({ reservedBy: null, reservedByAnimal: null });
-  }
+  await giftRef.update({ 
+    reservedByList: [], 
+    reservedCount: 0,
+    reservedBy: null, 
+    reservedByAnimal: null 
+  });
   return { success: true };
 }

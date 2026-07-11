@@ -11,6 +11,7 @@ export function GiftForm({ editGift, onSaved }: { editGift?: Gift | null, onSave
   const [formLink, setFormLink] = useState(editGift?.link || '');
   const [formPrice, setFormPrice] = useState(editGift?.price || 0);
   const [formUnlimited, setFormUnlimited] = useState(editGift?.unlimited || false);
+  const [formNeededQuantity, setFormNeededQuantity] = useState(editGift?.neededQuantity || 1);
 
   const handleSave = async () => {
     if (!formName || !formPrice) return alert("Completa nombre y precio");
@@ -21,6 +22,8 @@ export function GiftForm({ editGift, onSaved }: { editGift?: Gift | null, onSave
       link: formLink,
       price: Number(formPrice),
       unlimited: formUnlimited,
+      neededQuantity: Number(formNeededQuantity),
+      reservedCount: editGift?.reservedCount || 0,
       reservedBy: editGift?.reservedBy || null,
       reservedByAnimal: editGift?.reservedByAnimal || null,
       reservedByList: editGift?.reservedByList || []
@@ -43,7 +46,8 @@ export function GiftForm({ editGift, onSaved }: { editGift?: Gift | null, onSave
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
         <TextField label="Nombre del regalo" fullWidth value={formName} onChange={e => setFormName(e.target.value)} className="bg-zinc-50 dark:bg-zinc-950 rounded-xl" />
         <TextField label="Precio" type="number" fullWidth value={formPrice} onChange={e => setFormPrice(Number(e.target.value))} className="bg-zinc-50 dark:bg-zinc-950 rounded-xl" />
-        <TextField label="URL de Imagen" fullWidth value={formImage} onChange={e => setFormImage(e.target.value)} className="bg-zinc-50 dark:bg-zinc-950 rounded-xl sm:col-span-2" />
+        <TextField label="Cantidad Necesaria" type="number" fullWidth value={formNeededQuantity} onChange={e => setFormNeededQuantity(Number(e.target.value))} className="bg-zinc-50 dark:bg-zinc-950 rounded-xl" disabled={formUnlimited} />
+        <TextField label="URL de Imagen" fullWidth value={formImage} onChange={e => setFormImage(e.target.value)} className="bg-zinc-50 dark:bg-zinc-950 rounded-xl" />
         <TextField label="Link de compra (Opcional)" fullWidth value={formLink} onChange={e => setFormLink(e.target.value)} className="bg-zinc-50 dark:bg-zinc-950 rounded-xl sm:col-span-2" />
       </div>
       

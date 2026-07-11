@@ -5,6 +5,8 @@ export interface Gift {
   link: string;
   price: number;
   unlimited: boolean;
+  neededQuantity?: number;
+  reservedCount?: number;
   reservedBy: string | null;
   reservedByAnimal: string | null;
   reservedByList?: { name: string; animal: string }[];

@@ -1,17 +1,36 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useFirebaseGifts } from '@/hooks/useFirebaseGifts';
 import { useFirebaseSettings } from '@/hooks/useFirebaseSettings';
 import { GuestView } from '@/components/GuestView';
+import { AdminView } from '@/components/AdminView';
+import { LoginModal } from '@/components/LoginModal';
 import { Container, Typography } from '@mui/material';
 import { MuiThemeProvider } from '@/components/MuiThemeProvider';
-import Link from 'next/link';
+import { checkAdmin, logoutAdmin } from '@/app/actions/adminActions';
 
 export default function HomePage() {
   const { gifts, loading: giftsLoading } = useFirebaseGifts();
   const { settings, loading: settingsLoading } = useFirebaseSettings();
+  
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [loginOpen, setLoginOpen] = useState(false);
 
-  if (giftsLoading || settingsLoading) {
+  useEffect(() => {
+    checkAdmin().then(isAuth => {
+      setIsAdmin(isAuth);
+      setCheckingAuth(false);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await logoutAdmin();
+    setIsAdmin(false);
+  };
+
+  if (giftsLoading || settingsLoading || checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
         <Typography variant="h6" className="text-zinc-900 dark:text-zinc-100 font-bold animate-pulse">
@@ -35,17 +54,38 @@ export default function HomePage() {
             </Typography>
 
             <div className="inline-flex justify-center p-1 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm mx-auto">
-               <Link href="/admin" className="px-6 py-2 rounded-full font-semibold text-sm sm:text-base text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
-                 Administrar
-               </Link>
+              {!isAdmin ? (
+                <button 
+                  onClick={() => setLoginOpen(true)}
+                  className="px-6 py-2 rounded-full font-semibold text-sm sm:text-base text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                >
+                  Administrar
+                </button>
+              ) : (
+                <button 
+                  onClick={handleLogout}
+                  className="px-6 py-2 rounded-full font-semibold text-sm sm:text-base text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+                >
+                  Salir Admin
+                </button>
+              )}
             </div>
           </header>
 
           <main>
-            <GuestView gifts={gifts} />
+            {isAdmin ? <AdminView gifts={gifts} /> : <GuestView gifts={gifts} />}
           </main>
         </Container>
       </div>
+      
+      <LoginModal 
+        open={loginOpen} 
+        onClose={() => setLoginOpen(false)} 
+        onSuccess={() => {
+          setLoginOpen(false);
+          setIsAdmin(true);
+        }} 
+      />
     </MuiThemeProvider>
   );
 }
