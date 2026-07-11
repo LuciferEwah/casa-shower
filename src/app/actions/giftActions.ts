@@ -5,8 +5,9 @@ import { checkAdmin } from './adminActions';
 import { Gift } from '@/types';
 
 // For guest (reserve)
-export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string) {
+export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string, guestEmail: string) {
   if (!guestName || !guestLastname) throw new Error("Nombre requerido");
+  if (!guestEmail) throw new Error("Correo requerido");
   const fullName = `${guestName} ${guestLastname}`;
   const animal = "Osito"; // Mock
   
@@ -27,9 +28,10 @@ export async function reserveGift(slug: string, id: string, guestName: string, g
     
     transaction.update(giftRef, {
       reservedCount: reservedCount + 1,
-      reservedByList: [...prevList, { name: fullName, animal }],
+      reservedByList: [...prevList, { name: fullName, animal, email: guestEmail }],
       reservedBy: fullName, // backward compatibility
-      reservedByAnimal: animal
+      reservedByAnimal: animal,
+      reservedByEmail: guestEmail
     });
   });
 
@@ -62,7 +64,8 @@ export async function unreserveGift(slug: string, id: string) {
     reservedByList: [], 
     reservedCount: 0,
     reservedBy: null, 
-    reservedByAnimal: null 
+    reservedByAnimal: null,
+    reservedByEmail: null
   });
   return { success: true };
 }

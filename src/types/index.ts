@@ -9,7 +9,8 @@ export interface Gift {
   reservedCount?: number;
   reservedBy: string | null;
   reservedByAnimal: string | null;
-  reservedByList?: { name: string; animal: string }[];
+  reservedByEmail?: string | null;
+  reservedByList?: { name: string; animal: string; email?: string }[];
 }
 
 export interface Settings {

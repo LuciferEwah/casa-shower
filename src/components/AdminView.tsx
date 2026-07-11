@@ -49,10 +49,15 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     setSettingsLoading(false);
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/s/${slug}`);
+    showToast('¡Link copiado al portapapeles!', 'success');
+  };
+
   // Financial Dashboard calculations
   let totalMoney = 0;
   let totalReservedItems = 0;
-  const guestsMap = new Map<string, { total: number, items: string[] }>();
+  const guestsMap = new Map<string, { email?: string, total: number, items: string[] }>();
 
   gifts.forEach(gift => {
     const count = gift.reservedCount || 0;
@@ -63,15 +68,17 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     
     if (gift.reservedByList) {
       gift.reservedByList.forEach(r => {
-        const guest = guestsMap.get(r.name) || { total: 0, items: [] };
+        const guest = guestsMap.get(r.name) || { email: r.email, total: 0, items: [] };
         guest.total += gift.price;
         guest.items.push(gift.name);
+        if (r.email) guest.email = r.email; // Ensure email is captured
         guestsMap.set(r.name, guest);
       });
     } else if (gift.reservedBy) {
-      const guest = guestsMap.get(gift.reservedBy) || { total: 0, items: [] };
+      const guest = guestsMap.get(gift.reservedBy) || { email: gift.reservedByEmail || undefined, total: 0, items: [] };
       guest.total += gift.price;
       guest.items.push(gift.name);
+      if (gift.reservedByEmail) guest.email = gift.reservedByEmail;
       guestsMap.set(gift.reservedBy, guest);
     }
   });
@@ -82,10 +89,20 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     <section className="admin-view w-full max-w-4xl mx-auto">
       
       {/* Menu Tabs */}
-      <div className="flex justify-start sm:justify-center gap-2 mb-8 bg-white/40 dark:bg-slate-900/40 p-1.5 rounded-2xl sm:rounded-full backdrop-blur-md shadow-sm overflow-x-auto">
-        <button className={`whitespace-nowrap px-6 py-2.5 rounded-xl sm:rounded-full font-bold transition-all ${currentTab === 'gifts' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'}`} onClick={() => setCurrentTab('gifts')}>🎁 Regalos</button>
-        <button className={`whitespace-nowrap px-6 py-2.5 rounded-xl sm:rounded-full font-bold transition-all ${currentTab === 'analytics' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'}`} onClick={() => setCurrentTab('analytics')}>📊 Análisis</button>
-        <button className={`whitespace-nowrap px-6 py-2.5 rounded-xl sm:rounded-full font-bold transition-all ${currentTab === 'settings' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'}`} onClick={() => setCurrentTab('settings')}>⚙️ Ajustes</button>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+        <div className="flex justify-start sm:justify-center gap-2 bg-white/40 dark:bg-slate-900/40 p-1.5 rounded-2xl sm:rounded-full backdrop-blur-md shadow-sm overflow-x-auto w-full sm:w-auto">
+          <button className={`whitespace-nowrap px-6 py-2.5 rounded-xl sm:rounded-full font-bold transition-all ${currentTab === 'gifts' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'}`} onClick={() => setCurrentTab('gifts')}>🎁 Regalos</button>
+          <button className={`whitespace-nowrap px-6 py-2.5 rounded-xl sm:rounded-full font-bold transition-all ${currentTab === 'analytics' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'}`} onClick={() => setCurrentTab('analytics')}>📊 Análisis</button>
+          <button className={`whitespace-nowrap px-6 py-2.5 rounded-xl sm:rounded-full font-bold transition-all ${currentTab === 'settings' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50'}`} onClick={() => setCurrentTab('settings')}>⚙️ Ajustes</button>
+        </div>
+        <Button 
+          variant="outlined" 
+          color="secondary"
+          onClick={handleCopyLink}
+          className="whitespace-nowrap rounded-full font-bold px-6 py-2 border-2 bg-white/60 dark:bg-slate-800/60 shadow-sm hover:bg-purple-50 dark:hover:bg-purple-900/30 w-full sm:w-auto"
+        >
+          🔗 Copiar Link de Invitados
+        </Button>
       </div>
 
       {currentTab === 'analytics' && (
@@ -121,7 +138,10 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                 {uniqueGuests.map(guest => (
                   <div key={guest.name} className="p-4 sm:p-5 rounded-[1.5rem] bg-white/60 dark:bg-slate-800/60 flex flex-col sm:flex-row justify-between sm:items-center gap-3 shadow-sm border border-white/30 dark:border-slate-700/30">
                     <div>
-                      <Typography className="font-bold text-slate-800 dark:text-slate-100 text-lg">{guest.name}</Typography>
+                      <Typography className="font-bold text-slate-800 dark:text-slate-100 text-lg">
+                        {guest.name}
+                        {guest.email && <span className="text-sm font-normal text-slate-500 ml-2">({guest.email})</span>}
+                      </Typography>
                       <Typography variant="body2" className="text-purple-600 dark:text-purple-400 font-medium">
                         {guest.items.join(', ')}
                       </Typography>

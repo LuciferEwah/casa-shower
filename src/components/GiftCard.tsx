@@ -8,6 +8,7 @@ import { Card, CardMedia, CardContent, Typography, TextField, Button, Box, Chip,
 export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
   const [guestName, setGuestName] = useState('');
   const [guestLastname, setGuestLastname] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [hasReserved, setHasReserved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
@@ -29,13 +30,13 @@ export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
   }, [gift.id]);
 
   const handleReserve = async () => {
-    if (!guestName.trim() || !guestLastname.trim()) {
-      showToast("Por favor ingresa tu nombre y apellido", 'warning');
+    if (!guestName.trim() || !guestLastname.trim() || !guestEmail.trim()) {
+      showToast("Por favor ingresa tu nombre, apellido y correo", 'warning');
       return;
     }
     setLoading(true);
     try {
-      const res = await reserveGift(slug, gift.id, guestName, guestLastname);
+      const res = await reserveGift(slug, gift.id, guestName, guestLastname, guestEmail);
       if (res.success) {
         const stored = localStorage.getItem('casa_shower_reservations') || '[]';
         const reservations = JSON.parse(stored);
@@ -47,6 +48,7 @@ export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
         
         setGuestName('');
         setGuestLastname('');
+        setGuestEmail('');
       }
     } catch (e: unknown) {
       if (e instanceof Error) showToast(e.message, 'error');
@@ -108,24 +110,41 @@ export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
             </Box>
           ) : (
             <div className="flex flex-col gap-3 mt-2">
-              <TextField 
-                size="small" 
-                variant="outlined" 
-                placeholder="Tu nombre" 
-                value={guestName} 
-                onChange={e => setGuestName(e.target.value)} 
-                className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
+              <div className="flex flex-col sm:flex-row gap-3">
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  label="Nombre"
+                  size="small"
+                  value={guestName}
+                  onChange={e => setGuestName(e.target.value)}
+                  className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
+                  
+                />
+                <TextField
+                  fullWidth
+                  variant="outlined"
+                  label="Apellido"
+                  size="small"
+                  value={guestLastname}
+                  onChange={e => setGuestLastname(e.target.value)}
+                  className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
+                  
+                />
+              </div>
+              <TextField
+                fullWidth
+                variant="outlined"
+                label="Correo Electrónico"
+                size="small"
+                type="email"
+                value={guestEmail}
+                onChange={e => setGuestEmail(e.target.value)}
+                className="bg-white/40 dark:bg-slate-950/40 rounded-xl mt-3"
+                
               />
-              <TextField 
-                size="small" 
-                variant="outlined" 
-                placeholder="Tu apellido" 
-                value={guestLastname} 
-                onChange={e => setGuestLastname(e.target.value)} 
-                className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
-              />
+              
               <Button 
-                fullWidth 
                 variant="contained" 
                 color="primary"
                 disabled={loading}
