@@ -95,7 +95,7 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   // Financial Dashboard calculations
   let totalMoney = 0;
   let totalReservedItems = 0;
-  const guestsMap = new Map<string, { email?: string, total: number, items: string[] }>();
+  const guestsMap = new Map<string, { email?: string, total: number, items: { name: string, giftId: string }[] }>();
 
   gifts.forEach(gift => {
     const count = gift.reservedCount || 0;
@@ -108,20 +108,31 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
       gift.reservedByList.forEach(r => {
         const guest = guestsMap.get(r.name) || { email: r.email, total: 0, items: [] };
         guest.total += gift.price;
-        guest.items.push(gift.name);
+        guest.items.push({ name: gift.name, giftId: gift.id });
         if (r.email) guest.email = r.email; // Ensure email is captured
         guestsMap.set(r.name, guest);
       });
     } else if (gift.reservedBy) {
       const guest = guestsMap.get(gift.reservedBy) || { email: gift.reservedByEmail || undefined, total: 0, items: [] };
       guest.total += gift.price;
-      guest.items.push(gift.name);
+      guest.items.push({ name: gift.name, giftId: gift.id });
       if (gift.reservedByEmail) guest.email = gift.reservedByEmail;
       guestsMap.set(gift.reservedBy, guest);
     }
   });
   
   const uniqueGuests = Array.from(guestsMap.entries()).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.total - a.total);
+
+  const getGroupedGuestItems = (items: { name: string, giftId: string }[]) => {
+    const groups: Record<string, { name: string, giftId: string, count: number }> = {};
+    items.forEach(item => {
+      if (!groups[item.giftId]) {
+        groups[item.giftId] = { ...item, count: 0 };
+      }
+      groups[item.giftId].count += 1;
+    });
+    return Object.values(groups);
+  };
 
   const filteredUniqueGuests = uniqueGuests.filter(g => 
     g.name.toLowerCase().includes(guestSearch.toLowerCase()) || 
@@ -205,8 +216,18 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                       <TableRow key={guest.name} className="hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors">
                         <TableCell className="font-medium text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">{guest.name}</TableCell>
                         <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50">{guest.email || '-'}</TableCell>
-                        <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50 max-w-[200px] truncate" title={guest.items.join(', ')}>
-                          {guest.items.join(', ')}
+                        <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50 max-w-[400px]">
+                          <div className="flex flex-wrap gap-2">
+                            {getGroupedGuestItems(guest.items).map((item) => (
+                              <Chip 
+                                key={item.giftId} 
+                                label={`${item.name} ${item.count > 1 ? `(x${item.count})` : ''}`}
+                                size="small"
+                                onDelete={() => handleRemoveAll(item.giftId, guest.email || guest.name)}
+                                className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-800/50 font-medium"
+                              />
+                            ))}
+                          </div>
                         </TableCell>
                         <TableCell align="right" className="font-bold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">
                           ${guest.total.toLocaleString('es-CL')}
@@ -328,37 +349,6 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                     </Button>
                   ) : null}
                 </div>
-                
-                {/* List of individual reservations */}
-                {gift.reservedByList && gift.reservedByList.length > 0 && (
-                  <div className="w-full mt-6 bg-slate-100/50 dark:bg-slate-800/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                    <Typography variant="subtitle2" className="font-bold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wider text-xs">
-                      Detalle de Reservas
-                    </Typography>
-                    <div className="flex flex-col gap-2">
-                      {getGroupedReservations(gift.reservedByList).map((res) => (
-                        <div key={res.email || res.name} className="flex justify-between items-center p-2 rounded-lg bg-white/60 dark:bg-slate-900/40 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
-                          <div>
-                            <Typography variant="body2" className="font-bold text-slate-800 dark:text-slate-200">
-                              {res.name} {res.count > 1 && <span className="text-purple-600 dark:text-purple-400 ml-1">(x{res.count})</span>}
-                            </Typography>
-                            <Typography variant="caption" className="text-slate-500">{res.email || 'Sin correo'}</Typography>
-                          </div>
-                          <div className="flex flex-col sm:flex-row gap-1">
-                            <Button size="small" color="warning" variant="text" onClick={() => handleRemoveIndividual(gift.id, res.indices[res.indices.length - 1])} className="font-bold min-w-0 px-2 text-[10px] sm:text-xs">
-                              Quitar 1
-                            </Button>
-                            {res.count > 1 && (
-                              <Button size="small" color="error" variant="text" onClick={() => handleRemoveAll(gift.id, res.email || res.name)} className="font-bold min-w-0 px-2 text-[10px] sm:text-xs">
-                                Quitar Todo
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
