@@ -43,29 +43,23 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
 
   return (
     <Box className="p-6 sm:p-8 mb-12 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl">
-      <Typography variant="h5" className="font-bold mb-8 text-center text-purple-900 dark:text-purple-100">
+      <Typography variant="h5" className="font-bold text-center text-purple-900 dark:text-purple-100" sx={{ mb: 4 }}>
         {editGift ? 'Editar Regalo' : 'Agregar Nuevo Regalo'}
       </Typography>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 mt-2">
         <TextField label="Nombre del regalo" fullWidth value={formName} onChange={e => setFormName(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
-        <TextField label="Precio" type="number" fullWidth value={formPrice} onChange={e => setFormPrice(Number(e.target.value))} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
+        <TextField label="Precio de Referencia" type="number" fullWidth value={formPrice} onChange={e => setFormPrice(Number(e.target.value))} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
         <TextField label="Cantidad Necesaria" type="number" fullWidth value={formNeededQuantity} onChange={e => setFormNeededQuantity(Number(e.target.value))} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" disabled={formUnlimited} />
         <TextField label="URL de Imagen" fullWidth value={formImage} onChange={e => setFormImage(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
         <TextField label="Link de compra (Opcional)" fullWidth value={formLink} onChange={e => setFormLink(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl sm:col-span-2" />
       </div>
       
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8">
-        <FormControlLabel
-          control={
-            <Switch 
-              checked={formUnlimited} 
-              onChange={(e) => setFormUnlimited(e.target.checked)} 
-              color="secondary"
-            />
-          }
-          label={<Typography className="text-slate-600 dark:text-slate-300 font-medium select-none">Regalo ilimitado (Todos pueden reservar)</Typography>}
-          className="w-full sm:w-auto m-0"
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-8 pt-4">
+        <FormControlLabel 
+          control={<Switch checked={formUnlimited} onChange={e => setFormUnlimited(e.target.checked)} color="primary" />} 
+          label="Regalo ilimitado (Todos pueden reservar)" 
+          className="text-slate-700 dark:text-slate-300 mb-6 sm:mb-0"
         />
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
           {editGift && (

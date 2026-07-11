@@ -160,8 +160,10 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
       {currentTab === 'settings' && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="mb-8 p-6 sm:p-10 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl">
-            <Typography variant="h5" className="font-bold mb-8 text-purple-900 dark:text-purple-100">Ajustes del Evento</Typography>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <Typography variant="h5" className="font-bold text-purple-900 dark:text-purple-100" sx={{ mb: 4 }}>
+              Ajustes del Evento
+            </Typography>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-2 mb-8">
               <TextField
                 label="Nombre del Evento"
                 variant="outlined"
