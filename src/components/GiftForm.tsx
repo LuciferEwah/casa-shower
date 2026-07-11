@@ -5,7 +5,7 @@ import { Gift } from '@/types';
 import { saveGift } from '@/app/actions/giftActions';
 import { Typography, TextField, Button, FormControlLabel, Switch } from '@mui/material';
 
-export function GiftForm({ editGift, onSaved }: { editGift?: Gift | null, onSaved: () => void }) {
+export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?: Gift | null, onSaved: () => void }) {
   const [formName, setFormName] = useState(editGift?.name || '');
   const [formImage, setFormImage] = useState(editGift?.image || '');
   const [formLink, setFormLink] = useState(editGift?.link || '');
@@ -30,7 +30,7 @@ export function GiftForm({ editGift, onSaved }: { editGift?: Gift | null, onSave
     };
 
     try {
-      await saveGift(data, editGift?.id);
+      await saveGift(slug, data, editGift?.id);
       onSaved();
     } catch (e: unknown) {
       if (e instanceof Error) alert(e.message);

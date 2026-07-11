@@ -5,12 +5,13 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, C
 import { loginAdmin } from '@/app/actions/adminActions';
 
 interface LoginModalProps {
+  slug: string;
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function LoginModal({ open, onClose, onSuccess }: LoginModalProps) {
+export function LoginModal({ slug, open, onClose, onSuccess }: LoginModalProps) {
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -18,7 +19,7 @@ export function LoginModal({ open, onClose, onSuccess }: LoginModalProps) {
   const handleLogin = async () => {
     setError('');
     setLoading(true);
-    const res = await loginAdmin(pin);
+    const res = await loginAdmin(slug, pin);
     setLoading(false);
     if (res.success) {
       setPin('');

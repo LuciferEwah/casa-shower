@@ -3,18 +3,14 @@ import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Settings } from '@/types';
 
-export function useFirebaseSettings() {
-  const [settings, setSettings] = useState<Settings>({
-    babyName: 'Luci',
-    eventDate: '',
-    eventPlace: '',
-    customColor: '#4a4a4a',
-    babyEmoji: '🏠'
-  });
+export function useFirebaseSettings(slug: string) {
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const settingsRef = doc(db, 'config', 'settings');
+    if (!slug) return;
+
+    const settingsRef = doc(db, 'events', slug);
     const unsubscribe = onSnapshot(settingsRef, (snap) => {
       if (snap.exists()) {
         setSettings(snap.data() as Settings);
@@ -26,7 +22,7 @@ export function useFirebaseSettings() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [slug]);
 
   return { settings, loading };
 }

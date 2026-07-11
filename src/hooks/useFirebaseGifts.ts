@@ -3,12 +3,14 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { Gift } from '@/types';
 
-export function useFirebaseGifts() {
+export function useFirebaseGifts(slug: string) {
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const giftsRef = collection(db, 'gifts');
+    if (!slug) return;
+    
+    const giftsRef = collection(db, `events/${slug}/gifts`);
     const unsubscribe = onSnapshot(giftsRef, (snap) => {
       const data: Gift[] = [];
       snap.forEach(doc => data.push({ id: doc.id, ...doc.data() } as Gift));
@@ -20,7 +22,7 @@ export function useFirebaseGifts() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [slug]);
 
   return { gifts, loading };
 }

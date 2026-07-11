@@ -4,15 +4,15 @@ import { useState } from 'react';
 import { Gift } from '@/types';
 import { deleteGift, unreserveGift } from '@/app/actions/giftActions';
 import { GiftForm } from './GiftForm';
-import { Button, Typography, Chip } from '@mui/material';
+import { Button, Typography, Chip, Box } from '@mui/material';
 
-export function AdminView({ gifts }: { gifts: Gift[] }) {
+export function AdminView({ slug, gifts }: { slug: string, gifts: Gift[] }) {
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
 
   const handleDelete = async (id: string) => {
     if (confirm("Seguro que quieres eliminar este regalo?")) {
       try {
-        await deleteGift(id);
+        await deleteGift(slug, id);
       } catch (e: unknown) {
         if (e instanceof Error) alert(e.message);
       }
@@ -21,16 +21,57 @@ export function AdminView({ gifts }: { gifts: Gift[] }) {
 
   const handleUnreserve = async (id: string) => {
     try {
-      await unreserveGift(id);
+      await unreserveGift(slug, id);
     } catch (e: unknown) {
       if (e instanceof Error) alert(e.message);
     }
   };
 
+  // Financial Dashboard calculations
+  let totalMoney = 0;
+  let totalReservedItems = 0;
+  const uniqueGuests = new Set<string>();
+
+  gifts.forEach(gift => {
+    const count = gift.reservedCount || 0;
+    if (count > 0) {
+      totalMoney += gift.price * count;
+      totalReservedItems += count;
+    }
+    
+    if (gift.reservedByList) {
+      gift.reservedByList.forEach(r => uniqueGuests.add(r.name));
+    } else if (gift.reservedBy) {
+      uniqueGuests.add(gift.reservedBy);
+    }
+  });
+
   return (
     <section className="admin-view w-full max-w-4xl mx-auto">
       
-      <GiftForm key={editingGift ? editingGift.id : 'new'} editGift={editingGift} onSaved={() => setEditingGift(null)} />
+      {/* Financial Dashboard */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <Box className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-center shadow-sm">
+          <Typography variant="body2" className="text-zinc-500 uppercase tracking-wide font-bold mb-1">Monto Total</Typography>
+          <Typography variant="h4" className="font-bold text-green-600 dark:text-green-400">
+            ${totalMoney.toLocaleString('es-CL')}
+          </Typography>
+        </Box>
+        <Box className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-center shadow-sm">
+          <Typography variant="body2" className="text-zinc-500 uppercase tracking-wide font-bold mb-1">Regalos Reservados</Typography>
+          <Typography variant="h4" className="font-bold text-zinc-900 dark:text-zinc-100">
+            {totalReservedItems}
+          </Typography>
+        </Box>
+        <Box className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-center shadow-sm">
+          <Typography variant="body2" className="text-zinc-500 uppercase tracking-wide font-bold mb-1">Invitados Únicos</Typography>
+          <Typography variant="h4" className="font-bold text-blue-600 dark:text-blue-400">
+            {uniqueGuests.size}
+          </Typography>
+        </Box>
+      </div>
+      
+      <GiftForm slug={slug} key={editingGift ? editingGift.id : 'new'} editGift={editingGift} onSaved={() => setEditingGift(null)} />
 
       <div className="flex flex-col gap-4 mt-8 sm:mt-12">
         {gifts.map(gift => (
@@ -50,14 +91,14 @@ export function AdminView({ gifts }: { gifts: Gift[] }) {
                 <Typography variant="body2" className="text-zinc-600 dark:text-zinc-400 font-medium mb-2">
                   ${gift.price} {gift.unlimited && <span className="text-zinc-400 ml-1">• Ilimitado</span>}
                 </Typography>
-                {(gift.reservedBy || (gift.reservedByList && gift.reservedByList.length > 0)) && (
+                {(gift.reservedCount && gift.reservedCount > 0) ? (
                   <Chip 
                     size="small" 
                     variant="outlined" 
-                    label={`Reservado (${gift.unlimited ? gift.reservedByList?.length : '1'})`} 
+                    label={`Reservado (${gift.reservedCount})`} 
                     className="font-semibold border-zinc-300 dark:border-zinc-600 text-zinc-700 dark:text-zinc-300"
                   />
-                )}
+                ) : null}
               </div>
             </div>
             
@@ -68,11 +109,11 @@ export function AdminView({ gifts }: { gifts: Gift[] }) {
               <Button size="small" variant="outlined" color="error" className="flex-1 md:flex-none rounded-full font-bold px-4 hover:bg-red-50 dark:hover:bg-red-950/30" onClick={() => handleDelete(gift.id)}>
                 Eliminar
               </Button>
-              {(gift.reservedBy || (gift.reservedByList && gift.reservedByList.length > 0)) && (
+              {(gift.reservedCount && gift.reservedCount > 0) ? (
                 <Button size="small" variant="contained" color="inherit" className="w-full md:w-auto rounded-full font-bold px-4 shadow-sm bg-zinc-200 hover:bg-zinc-300 text-zinc-900 dark:bg-zinc-700 dark:hover:bg-zinc-600 dark:text-zinc-100" onClick={() => handleUnreserve(gift.id)}>
                   Liberar
                 </Button>
-              )}
+              ) : null}
             </div>
           </div>
         ))}

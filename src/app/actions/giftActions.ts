@@ -5,12 +5,12 @@ import { checkAdmin } from './adminActions';
 import { Gift } from '@/types';
 
 // For guest (reserve)
-export async function reserveGift(id: string, guestName: string, guestLastname: string) {
+export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string) {
   if (!guestName || !guestLastname) throw new Error("Nombre requerido");
   const fullName = `${guestName} ${guestLastname}`;
   const animal = "Osito"; // Mock
   
-  const giftRef = adminDb.collection('gifts').doc(id);
+  const giftRef = adminDb.collection(`events/${slug}/gifts`).doc(id);
   
   await adminDb.runTransaction(async (transaction) => {
     const giftDoc = await transaction.get(giftRef);
@@ -37,27 +37,27 @@ export async function reserveGift(id: string, guestName: string, guestLastname: 
 }
 
 // For Admin
-export async function saveGift(data: Omit<Gift, 'id'>, id?: string) {
-  if (!(await checkAdmin())) throw new Error('Unauthorized');
+export async function saveGift(slug: string, data: Omit<Gift, 'id'>, id?: string) {
+  if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
   
   if (id) {
-    await adminDb.collection('gifts').doc(id).update(data);
+    await adminDb.collection(`events/${slug}/gifts`).doc(id).update(data as Record<string, unknown>);
   } else {
-    await adminDb.collection('gifts').add(data);
+    await adminDb.collection(`events/${slug}/gifts`).add(data as Record<string, unknown>);
   }
   return { success: true };
 }
 
-export async function deleteGift(id: string) {
-  if (!(await checkAdmin())) throw new Error('Unauthorized');
-  await adminDb.collection('gifts').doc(id).delete();
+export async function deleteGift(slug: string, id: string) {
+  if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
+  await adminDb.collection(`events/${slug}/gifts`).doc(id).delete();
   return { success: true };
 }
 
-export async function unreserveGift(id: string) {
-  if (!(await checkAdmin())) throw new Error('Unauthorized');
+export async function unreserveGift(slug: string, id: string) {
+  if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
   
-  const giftRef = adminDb.collection('gifts').doc(id);
+  const giftRef = adminDb.collection(`events/${slug}/gifts`).doc(id);
   await giftRef.update({ 
     reservedByList: [], 
     reservedCount: 0,

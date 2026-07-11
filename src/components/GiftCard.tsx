@@ -5,7 +5,7 @@ import { Gift } from '@/types';
 import { reserveGift } from '@/app/actions/giftActions';
 import { Card, CardMedia, CardContent, Typography, TextField, Button, Box, Chip, CircularProgress } from '@mui/material';
 
-export function GiftCard({ gift }: { gift: Gift }) {
+export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
   const [guestName, setGuestName] = useState('');
   const [guestLastname, setGuestLastname] = useState('');
   const [hasReserved, setHasReserved] = useState(false);
@@ -30,7 +30,7 @@ export function GiftCard({ gift }: { gift: Gift }) {
     }
     setLoading(true);
     try {
-      const res = await reserveGift(gift.id, guestName, guestLastname);
+      const res = await reserveGift(slug, gift.id, guestName, guestLastname);
       if (res.success) {
         alert(`Reservado como ${res.animal}!`);
         const stored = localStorage.getItem('casa_shower_reservations');

@@ -1,91 +1,120 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFirebaseGifts } from '@/hooks/useFirebaseGifts';
-import { useFirebaseSettings } from '@/hooks/useFirebaseSettings';
-import { GuestView } from '@/components/GuestView';
-import { AdminView } from '@/components/AdminView';
-import { LoginModal } from '@/components/LoginModal';
-import { Container, Typography } from '@mui/material';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createEvent } from '@/app/actions/eventActions';
+import { Container, Typography, TextField, Button, Box, CircularProgress } from '@mui/material';
 import { MuiThemeProvider } from '@/components/MuiThemeProvider';
-import { checkAdmin, logoutAdmin } from '@/app/actions/adminActions';
 
-export default function HomePage() {
-  const { gifts, loading: giftsLoading } = useFirebaseGifts();
-  const { settings, loading: settingsLoading } = useFirebaseSettings();
+export default function LandingPage() {
+  const router = useRouter();
   
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const [loginOpen, setLoginOpen] = useState(false);
+  const [slug, setSlug] = useState('');
+  const [babyName, setBabyName] = useState('');
+  const [adminPin, setAdminPin] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    checkAdmin().then(isAuth => {
-      setIsAdmin(isAuth);
-      setCheckingAuth(false);
-    });
-  }, []);
+  const handleCreate = async () => {
+    setError('');
+    
+    // basic validation
+    if (!slug || !babyName || !adminPin) {
+      setError('Todos los campos son obligatorios');
+      return;
+    }
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      setError('El Link Personalizado solo puede contener letras minusculas, numeros y guiones (-)');
+      return;
+    }
+    if (adminPin.length < 4) {
+      setError('El PIN debe tener al menos 4 caracteres');
+      return;
+    }
 
-  const handleLogout = async () => {
-    await logoutAdmin();
-    setIsAdmin(false);
+    setLoading(true);
+    try {
+      const res = await createEvent(slug, babyName, adminPin);
+      if (res.success) {
+        // Redirigir al nuevo evento
+        router.push(`/s/${slug}`);
+      }
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError('Ocurrio un error desconocido');
+      }
+    }
+    setLoading(false);
   };
-
-  if (giftsLoading || settingsLoading || checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <Typography variant="h6" className="text-zinc-900 dark:text-zinc-100 font-bold animate-pulse">
-          Cargando...
-        </Typography>
-      </div>
-    );
-  }
 
   return (
     <MuiThemeProvider>
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans relative overflow-x-hidden transition-colors duration-300 pb-20">
-        
-        <Container maxWidth="lg" className="relative z-10 pt-8 sm:pt-16 px-4 sm:px-6">
-          <header className="mb-10 sm:mb-16 text-center">
-            <Typography variant="h3" component="h1" className="font-bold tracking-tight mb-4 text-zinc-950 dark:text-zinc-100 px-2 sm:px-0">
-              {settings?.babyEmoji || '🏠'} Casa Shower de {settings?.babyName || 'Luci'}
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 font-sans flex items-center justify-center p-4">
+        <Container maxWidth="sm">
+          <Box className="bg-white dark:bg-zinc-900 p-8 rounded-[2rem] shadow-xl border border-zinc-200 dark:border-zinc-800 text-center">
+            <Typography variant="h3" className="font-bold mb-2">
+              🎁 Casa Shower
             </Typography>
-            <Typography variant="subtitle1" className="text-zinc-500 dark:text-zinc-400 mb-8 font-medium">
-              {settings?.eventDate} {settings?.eventDate && settings?.eventPlace && '•'} {settings?.eventPlace}
+            <Typography variant="body1" className="text-zinc-500 dark:text-zinc-400 mb-8">
+              Crea tu lista de regalos en segundos
             </Typography>
 
-            <div className="inline-flex justify-center p-1 rounded-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm mx-auto">
-              {!isAdmin ? (
-                <button 
-                  onClick={() => setLoginOpen(true)}
-                  className="px-6 py-2 rounded-full font-semibold text-sm sm:text-base text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                >
-                  Administrar
-                </button>
-              ) : (
-                <button 
-                  onClick={handleLogout}
-                  className="px-6 py-2 rounded-full font-semibold text-sm sm:text-base text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-                >
-                  Salir Admin
-                </button>
-              )}
+            {error && (
+              <Box className="bg-red-50 text-red-600 p-3 rounded-xl mb-6 text-sm">
+                {error}
+              </Box>
+            )}
+
+            <div className="flex flex-col gap-5 text-left">
+              <TextField
+                label="Nombre del Bebe (o del Evento)"
+                variant="outlined"
+                fullWidth
+                value={babyName}
+                onChange={(e) => setBabyName(e.target.value)}
+                placeholder="Ej: Kai"
+                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
+              />
+              
+              <TextField
+                label="Link Personalizado (Slug)"
+                variant="outlined"
+                fullWidth
+                value={slug}
+                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="ej: baby-shower-kai"
+                helperText={`Tu link será: casashower.com/s/${slug || '...'}`}
+                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
+              />
+
+              <TextField
+                label="PIN de Administrador"
+                variant="outlined"
+                type="password"
+                fullWidth
+                value={adminPin}
+                onChange={(e) => setAdminPin(e.target.value)}
+                placeholder="Min 4 caracteres"
+                className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
+              />
+
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                fullWidth
+                onClick={handleCreate}
+                disabled={loading}
+                className="rounded-full py-3.5 font-bold mt-2 bg-black hover:bg-zinc-800 text-white dark:bg-white dark:hover:bg-zinc-200 dark:text-black disabled:opacity-70"
+              >
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Crear mi Casa Shower'}
+              </Button>
             </div>
-          </header>
-
-          <main>
-            {isAdmin ? <AdminView gifts={gifts} /> : <GuestView gifts={gifts} />}
-          </main>
+          </Box>
         </Container>
       </div>
-      
-      <LoginModal 
-        open={loginOpen} 
-        onClose={() => setLoginOpen(false)} 
-        onSuccess={() => {
-          setLoginOpen(false);
-          setIsAdmin(true);
-        }} 
-      />
     </MuiThemeProvider>
   );
 }
