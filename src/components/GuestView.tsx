@@ -58,11 +58,11 @@ export function GuestView({ slug, gifts }: { slug: string, gifts: Gift[] }) {
   if (!identity) {
     return (
       <section className="flex flex-col items-center justify-center py-10 px-4 w-full max-w-md mx-auto animate-in fade-in zoom-in-95 duration-500">
-        <Box className="w-full p-8 rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-2xl flex flex-col items-center text-center relative overflow-hidden">
+        <Box className="w-full p-8 sm:p-10 rounded-[2rem] bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-purple-200 dark:border-purple-900/50 shadow-2xl flex flex-col items-center text-center relative overflow-hidden">
           
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-purple-400 via-fuchsia-500 to-purple-600"></div>
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-600 via-purple-800 to-purple-950"></div>
           
-          <div className="w-20 h-20 mb-6 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center text-4xl shadow-inner">
+          <div className="w-20 h-20 mb-6 bg-purple-100 dark:bg-purple-900/60 rounded-full flex items-center justify-center text-4xl shadow-inner border border-purple-200 dark:border-purple-700">
             👋
           </div>
           
@@ -73,7 +73,7 @@ export function GuestView({ slug, gifts }: { slug: string, gifts: Gift[] }) {
             Ingresa tus datos para ver y reservar regalos. Solo tú podrás ver tus reservas.
           </Typography>
 
-          <div className="w-full flex flex-col gap-4">
+          <div className="w-full flex flex-col gap-5">
             <TextField
               fullWidth
               label="Nombre"
@@ -112,7 +112,7 @@ export function GuestView({ slug, gifts }: { slug: string, gifts: Gift[] }) {
             color="primary" 
             size="large"
             onClick={handleLogin}
-            className="w-full mt-8 rounded-full py-3.5 font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white"
+            className="w-full mt-8 rounded-full py-4 font-bold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all bg-gradient-to-r from-purple-700 to-purple-900 text-white border border-purple-500/30"
           >
             Entrar a la Lista
           </Button>
