@@ -70,11 +70,20 @@ export default function EventPage() {
             <Typography variant="h3" component="h1" className="font-bold tracking-tight mb-4 text-purple-950 dark:text-purple-100 px-2 sm:px-0">
               {settings.babyEmoji || '🏠'} Casa Shower de {settings.babyName || 'Luci'}
             </Typography>
-            <Typography variant="subtitle1" className="text-slate-600 dark:text-slate-400 mb-8 font-medium">
-              {settings.eventDate} {settings.eventDate && settings.eventPlace && '•'} {settings.eventPlace}
-            </Typography>
+            <div className="flex flex-wrap justify-center gap-3 mb-10 mt-6">
+              {settings.eventDate && (
+                <div className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 font-bold text-lg sm:text-xl shadow-sm border border-purple-200 dark:border-purple-800/50 flex items-center gap-2">
+                  📅 {settings.eventDate}
+                </div>
+              )}
+              {settings.eventPlace && (
+                <div className="px-5 py-2 sm:px-6 sm:py-2.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 font-bold text-lg sm:text-xl shadow-sm border border-blue-200 dark:border-blue-800/50 flex items-center gap-2">
+                  📍 {settings.eventPlace}
+                </div>
+              )}
+            </div>
 
-            <div className="inline-flex justify-center p-1.5 rounded-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/40 dark:border-slate-700/50 shadow-sm mx-auto mb-8">
+            <div className="inline-flex justify-center p-2 sm:p-3 rounded-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/40 dark:border-slate-700/50 shadow-md mx-auto mb-10">
               {!isAdmin ? (
                 <button 
                   onClick={() => setLoginOpen(true)}
