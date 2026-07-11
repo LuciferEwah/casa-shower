@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Gift } from '@/types';
 import { reserveGift } from '@/app/actions/giftActions';
-import { Card, CardMedia, CardContent, Typography, TextField, Button, Box, Chip, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, Button, Box, Chip, CircularProgress, Snackbar, Alert } from '@mui/material';
+import { GuestIdentity } from './GuestView';
 
-export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
-  const [guestName, setGuestName] = useState('');
-  const [guestLastname, setGuestLastname] = useState('');
-  const [guestEmail, setGuestEmail] = useState('');
-  const [hasReserved, setHasReserved] = useState(false);
+export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gift, guestIdentity?: GuestIdentity }) {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
 
@@ -17,38 +14,25 @@ export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
     setToast({ open: true, message, severity });
   };
 
-  useEffect(() => {
-    // Check localStorage if this user reserved this gift
-    const stored = localStorage.getItem('casa_shower_reservations');
-    if (stored) {
-      const reservations = JSON.parse(stored);
-      if (reservations.includes(gift.id)) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setHasReserved(true);
-      }
-    }
-  }, [gift.id]);
+  const isReservedByMe = () => {
+    if (!guestIdentity) return false;
+    const myEmail = guestIdentity.email.toLowerCase();
+    if (gift.reservedByList && gift.reservedByList.some(r => r.email?.toLowerCase() === myEmail)) return true;
+    if (gift.reservedByEmail?.toLowerCase() === myEmail) return true;
+    return false;
+  };
 
   const handleReserve = async () => {
-    if (!guestName.trim() || !guestLastname.trim() || !guestEmail.trim()) {
-      showToast("Por favor ingresa tu nombre, apellido y correo", 'warning');
+    if (!guestIdentity) {
+      showToast("Error: No estás identificado", 'error');
       return;
     }
+    
     setLoading(true);
     try {
-      const res = await reserveGift(slug, gift.id, guestName, guestLastname, guestEmail);
+      const res = await reserveGift(slug, gift.id, guestIdentity.name, guestIdentity.lastname, guestIdentity.email);
       if (res.success) {
-        const stored = localStorage.getItem('casa_shower_reservations') || '[]';
-        const reservations = JSON.parse(stored);
-        reservations.push(gift.id);
-        localStorage.setItem('casa_shower_reservations', JSON.stringify(reservations));
-        
-        setHasReserved(true);
-        showToast(`Reservado como ${res.animal}!`, 'success');
-        
-        setGuestName('');
-        setGuestLastname('');
-        setGuestEmail('');
+        showToast(`¡Reservado exitosamente!`, 'success');
       }
     } catch (e: unknown) {
       if (e instanceof Error) showToast(e.message, 'error');
@@ -56,103 +40,81 @@ export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
     setLoading(false);
   };
 
-  const needed = gift.neededQuantity || 1;
   const count = gift.reservedCount || 0;
-  const isSoldOut = !gift.unlimited && count >= needed;
-  
+  const needed = gift.neededQuantity || 1;
+  const available = gift.unlimited ? true : count < needed;
+  const reservedByMe = isReservedByMe();
+
   return (
-    <Card 
-      className="rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 shadow-lg hover:scale-[1.02] hover:shadow-xl transition-all duration-300 flex flex-col h-full"
-      elevation={0}
-    >
+    <Card className={`relative overflow-hidden rounded-[2rem] border transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 ${!available && !reservedByMe ? 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 grayscale-[50%]' : 'bg-white/70 dark:bg-slate-900/70 border-white/60 dark:border-slate-700/50 backdrop-blur-xl'}`}>
+      
+      {!available && !reservedByMe && (
+        <div className="absolute top-4 right-4 z-10">
+          <Chip label="Agotado" color="default" className="font-bold bg-slate-200/90 dark:bg-slate-700/90 text-slate-600 dark:text-slate-300 shadow-sm backdrop-blur-sm" />
+        </div>
+      )}
+      {reservedByMe && (
+        <div className="absolute top-4 right-4 z-10 animate-in zoom-in">
+          <Chip label="Reservado por ti 💖" color="success" className="font-bold bg-green-100/90 dark:bg-green-900/90 text-green-700 dark:text-green-300 shadow-sm backdrop-blur-sm border border-green-200 dark:border-green-800" />
+        </div>
+      )}
+
       {gift.image ? (
         <CardMedia
           component="img"
-          height="200"
+          height="220"
           image={gift.image}
           alt={gift.name}
-          className="h-48 sm:h-56 object-cover rounded-t-[2rem]"
+          className="h-[220px] object-cover"
         />
       ) : (
-        <div className="h-48 sm:h-56 bg-purple-100/50 dark:bg-purple-900/20 flex items-center justify-center rounded-t-[2rem]">
-          <span className="text-6xl sm:text-7xl drop-shadow-md">🎁</span>
+        <div className="h-[220px] w-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-7xl">
+          🎁
         </div>
       )}
-      <CardContent className="flex-grow flex flex-col p-5 sm:p-6">
-        <Typography variant="h6" className="font-bold text-slate-800 dark:text-slate-100 line-clamp-2 mb-1">
+      
+      <CardContent className="p-6">
+        <Typography variant="h5" className="font-bold text-slate-800 dark:text-slate-100 mb-1 leading-tight">
           {gift.name}
         </Typography>
-        <Typography variant="body1" className="text-purple-600 dark:text-purple-400 font-bold mb-2 flex items-center flex-wrap gap-2">
-          ${gift.price} 
-          {gift.unlimited && (
-            <Chip size="small" label="Ilimitado" color="secondary" className="font-bold px-1" />
-          )}
+        <Typography variant="h6" className="font-bold text-purple-600 dark:text-purple-400 mb-4">
+          ${gift.price.toLocaleString('es-CL')}
         </Typography>
 
-        {!gift.unlimited && needed > 1 && (
-          <Typography variant="body2" className="text-slate-500 dark:text-slate-400 mb-4 font-medium">
-            Faltan {needed - count} de {needed}
-          </Typography>
-        )}
-        
-        <div className="mt-auto pt-2">
-          {hasReserved ? (
-            <Box className="p-3 sm:p-4 bg-fuchsia-50/80 dark:bg-fuchsia-900/30 rounded-2xl border border-fuchsia-100 dark:border-fuchsia-800 backdrop-blur-sm shadow-inner mt-2">
-              <Typography variant="body2" className="text-fuchsia-800 dark:text-fuchsia-200 font-semibold text-center">
-                🎁 Tú reservaste esto
-              </Typography>
-            </Box>
-          ) : isSoldOut ? (
-            <Box className="p-3 sm:p-4 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 backdrop-blur-sm mt-2 text-center shadow-inner">
-              <Typography variant="body2" className="text-slate-500 dark:text-slate-400 font-semibold">
-                Agotado
-              </Typography>
-            </Box>
-          ) : (
-            <div className="flex flex-col gap-3 mt-2">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  label="Nombre"
-                  size="small"
-                  value={guestName}
-                  onChange={e => setGuestName(e.target.value)}
-                  className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
-                  
-                />
-                <TextField
-                  fullWidth
-                  variant="outlined"
-                  label="Apellido"
-                  size="small"
-                  value={guestLastname}
-                  onChange={e => setGuestLastname(e.target.value)}
-                  className="bg-white/40 dark:bg-slate-950/40 rounded-xl"
-                  
-                />
-              </div>
-              <TextField
-                fullWidth
-                variant="outlined"
-                label="Correo Electrónico"
-                size="small"
-                type="email"
-                value={guestEmail}
-                onChange={e => setGuestEmail(e.target.value)}
-                className="bg-white/40 dark:bg-slate-950/40 rounded-xl mt-3"
-                
-              />
-              
-              <Button 
-                variant="contained" 
-                color="primary"
-                disabled={loading}
-                className="rounded-xl py-2 mt-1 font-bold shadow-md hover:shadow-lg disabled:opacity-50"
-                onClick={handleReserve}
-              >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Lo llevo yo!'}
-              </Button>
+        <div className="flex flex-col gap-4">
+          {gift.link && (
+            <Button 
+              variant="outlined" 
+              href={gift.link} 
+              target="_blank" 
+              className="rounded-full py-2 border-slate-300 text-slate-600 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold"
+            >
+              Ver en tienda 🛒
+            </Button>
+          )}
+          
+          {guestIdentity && (
+            <div className="mt-2">
+              {!available && !reservedByMe ? (
+                <Box className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 text-center border border-slate-200 dark:border-slate-700">
+                  <Typography className="text-slate-500 dark:text-slate-400 font-medium">Este regalo ya fue reservado.</Typography>
+                </Box>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    fullWidth 
+                    variant="contained" 
+                    color="primary"
+                    disabled={loading || (reservedByMe && !gift.unlimited)} // If it's unlimited, they can reserve again
+                    onClick={handleReserve}
+                    className="rounded-xl py-3 font-bold shadow-md hover:shadow-lg transition-all"
+                  >
+                    {loading ? <CircularProgress size={24} color="inherit" /> : 
+                     (reservedByMe && !gift.unlimited) ? '¡Ya lo reservaste!' : 
+                     gift.unlimited ? 'Reservar Otro' : 'Reservar Regalo'}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </div>
