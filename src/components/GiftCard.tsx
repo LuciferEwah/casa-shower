@@ -69,7 +69,7 @@ export function GiftCard({ gift }: { gift: Gift }) {
                 value={guestName} 
                 onChange={e => setGuestName(e.target.value)} 
                 className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
-                InputProps={{ className: 'rounded-xl' }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '0.75rem' } }}
               />
               <TextField 
                 size="small" 
@@ -78,7 +78,7 @@ export function GiftCard({ gift }: { gift: Gift }) {
                 value={guestLastname} 
                 onChange={e => setGuestLastname(e.target.value)} 
                 className="bg-zinc-50 dark:bg-zinc-950 rounded-xl"
-                InputProps={{ className: 'rounded-xl' }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '0.75rem' } }}
               />
               <Button 
                 fullWidth 
