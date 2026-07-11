@@ -3,13 +3,18 @@
 import { useState, useEffect } from 'react';
 import { Gift } from '@/types';
 import { reserveGift } from '@/app/actions/giftActions';
-import { Card, CardMedia, CardContent, Typography, TextField, Button, Box, Chip, CircularProgress } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, TextField, Button, Box, Chip, CircularProgress, Snackbar, Alert } from '@mui/material';
 
 export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
   const [guestName, setGuestName] = useState('');
   const [guestLastname, setGuestLastname] = useState('');
   const [hasReserved, setHasReserved] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
+
+  const showToast = (message: string, severity: 'success' | 'error' | 'warning') => {
+    setToast({ open: true, message, severity });
+  };
 
   useEffect(() => {
     // Check localStorage if this user reserved this gift
@@ -24,23 +29,27 @@ export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
   }, [gift.id]);
 
   const handleReserve = async () => {
-    if (!guestName || !guestLastname) {
-      alert("Por favor ingresa tu nombre y apellido");
+    if (!guestName.trim() || !guestLastname.trim()) {
+      showToast("Por favor ingresa tu nombre y apellido", 'warning');
       return;
     }
     setLoading(true);
     try {
       const res = await reserveGift(slug, gift.id, guestName, guestLastname);
       if (res.success) {
-        alert(`Reservado como ${res.animal}!`);
-        const stored = localStorage.getItem('casa_shower_reservations');
-        const reservations = stored ? JSON.parse(stored) : [];
+        const stored = localStorage.getItem('casa_shower_reservations') || '[]';
+        const reservations = JSON.parse(stored);
         reservations.push(gift.id);
         localStorage.setItem('casa_shower_reservations', JSON.stringify(reservations));
+        
         setHasReserved(true);
+        showToast(`Reservado como ${res.animal}!`, 'success');
+        
+        setGuestName('');
+        setGuestLastname('');
       }
     } catch (e: unknown) {
-      if (e instanceof Error) alert(e.message);
+      if (e instanceof Error) showToast(e.message, 'error');
     }
     setLoading(false);
   };
@@ -129,6 +138,22 @@ export function GiftCard({ slug, gift }: { slug: string, gift: Gift }) {
           )}
         </div>
       </CardContent>
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setToast({ ...toast, open: false })} 
+          severity={toast.severity} 
+          variant="filled"
+          className="rounded-xl shadow-lg font-medium"
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Card>
   );
 }

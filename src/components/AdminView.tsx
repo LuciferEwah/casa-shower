@@ -5,19 +5,25 @@ import { Gift, Settings } from '@/types';
 import { deleteGift, unreserveGift } from '@/app/actions/giftActions';
 import { updateEventSettings } from '@/app/actions/eventActions';
 import { GiftForm } from './GiftForm';
-import { Button, Typography, Chip, Box, TextField, CircularProgress } from '@mui/material';
+import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert } from '@mui/material';
 
 export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift[], settings: Settings }) {
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [formData, setFormData] = useState(settings);
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+
+  const showToast = (message: string, severity: 'success' | 'error') => {
+    setToast({ open: true, message, severity });
+  };
 
   const handleDelete = async (id: string) => {
     if (confirm("Seguro que quieres eliminar este regalo?")) {
       try {
         await deleteGift(slug, id);
+        showToast('Regalo eliminado', 'success');
       } catch (e: unknown) {
-        if (e instanceof Error) alert(e.message);
+        if (e instanceof Error) showToast(e.message, 'error');
       }
     }
   };
@@ -25,8 +31,9 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   const handleUnreserve = async (id: string) => {
     try {
       await unreserveGift(slug, id);
+      showToast('Regalo liberado', 'success');
     } catch (e: unknown) {
-      if (e instanceof Error) alert(e.message);
+      if (e instanceof Error) showToast(e.message, 'error');
     }
   };
 
@@ -34,9 +41,9 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     setSettingsLoading(true);
     try {
       await updateEventSettings(slug, formData);
-      alert('Ajustes guardados correctamente');
+      showToast('Ajustes guardados correctamente', 'success');
     } catch (e: unknown) {
-      if (e instanceof Error) alert(e.message);
+      if (e instanceof Error) showToast(e.message, 'error');
     }
     setSettingsLoading(false);
   };
@@ -177,6 +184,23 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
           </div>
         ))}
       </div>
+
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setToast({ ...toast, open: false })} 
+          severity={toast.severity} 
+          variant="filled"
+          className="rounded-xl shadow-lg"
+          sx={{ width: '100%' }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </section>
   );
 }

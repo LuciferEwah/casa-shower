@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Gift } from '@/types';
 import { saveGift } from '@/app/actions/giftActions';
-import { Typography, TextField, Button, FormControlLabel, Switch } from '@mui/material';
+import { Typography, TextField, Button, FormControlLabel, Switch, Snackbar, Alert, Box } from '@mui/material';
 
 export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?: Gift | null, onSaved: () => void }) {
   const [formName, setFormName] = useState(editGift?.name || '');
@@ -12,9 +12,13 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
   const [formPrice, setFormPrice] = useState(editGift?.price || 0);
   const [formUnlimited, setFormUnlimited] = useState(editGift?.unlimited || false);
   const [formNeededQuantity, setFormNeededQuantity] = useState(editGift?.neededQuantity || 1);
+  const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
 
   const handleSave = async () => {
-    if (!formName || !formPrice) return alert("Completa nombre y precio");
+    if (!formName || !formPrice) {
+      setToast({ open: true, message: "Completa nombre y precio", severity: 'warning' });
+      return;
+    }
 
     const data = {
       name: formName,
@@ -33,12 +37,12 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
       await saveGift(slug, data, editGift?.id);
       onSaved();
     } catch (e: unknown) {
-      if (e instanceof Error) alert(e.message);
+      if (e instanceof Error) setToast({ open: true, message: e.message, severity: 'error' });
     }
   };
 
   return (
-    <div className="p-6 sm:p-8 mb-12 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl">
+    <Box className="p-6 sm:p-8 mb-12 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl">
       <Typography variant="h5" className="font-bold mb-8 text-center text-purple-900 dark:text-purple-100">
         {editGift ? 'Editar Regalo' : 'Agregar Nuevo Regalo'}
       </Typography>
@@ -78,6 +82,21 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
           </Button>
         </div>
       </div>
-    </div>
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setToast({ ...toast, open: false })} 
+          severity={toast.severity} 
+          variant="filled"
+          className="rounded-xl shadow-lg font-medium"
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
+    </Box>
   );
 }
