@@ -19,4 +19,5 @@ export interface Settings {
   eventPlace: string;
   customColor: string;
   babyEmoji: string;
+  welcomeMessage?: string;
 }

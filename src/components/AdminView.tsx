@@ -205,6 +205,16 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                 onChange={(e) => setFormData({...formData, eventPlace: e.target.value})}
                 className="bg-white/40 dark:bg-slate-950/40 rounded-2xl"
               />
+              <TextField
+                label="Mensaje de Bienvenida (Opcional)"
+                variant="outlined"
+                multiline
+                rows={3}
+                value={formData.welcomeMessage || ''}
+                onChange={(e) => setFormData({...formData, welcomeMessage: e.target.value})}
+                className="bg-white/40 dark:bg-slate-950/40 rounded-2xl sm:col-span-2"
+                placeholder="Ej: Recuerda que esta lista es de referencia..."
+              />
             </div>
             <Button 
               variant="contained" 

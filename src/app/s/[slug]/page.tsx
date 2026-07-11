@@ -74,7 +74,7 @@ export default function EventPage() {
               {settings.eventDate} {settings.eventDate && settings.eventPlace && '•'} {settings.eventPlace}
             </Typography>
 
-            <div className="inline-flex justify-center p-1.5 rounded-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/40 dark:border-slate-700/50 shadow-sm mx-auto">
+            <div className="inline-flex justify-center p-1.5 rounded-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-md border border-white/40 dark:border-slate-700/50 shadow-sm mx-auto mb-8">
               {!isAdmin ? (
                 <button 
                   onClick={() => setLoginOpen(true)}
@@ -90,6 +90,15 @@ export default function EventPage() {
                   Salir Admin
                 </button>
               )}
+            </div>
+
+            <div className="max-w-3xl mx-auto p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-purple-100/40 to-fuchsia-100/40 dark:from-purple-900/20 dark:to-fuchsia-900/20 backdrop-blur-md border border-purple-200/50 dark:border-purple-800/30 shadow-sm text-center">
+              <Typography variant="h6" className="text-purple-800 dark:text-purple-300 font-bold mb-2 flex items-center justify-center gap-2">
+                💝 ¡Todo regalo es bienvenido!
+              </Typography>
+              <Typography variant="body1" className="text-slate-700 dark:text-slate-300 font-medium leading-relaxed whitespace-pre-line">
+                {settings.welcomeMessage || "Recuerda que esta lista es de referencia. No es obligatorio comprar en el link sugerido, pero las imágenes muestran el estilo, diseño o los colores que nos gustan."}
+              </Typography>
             </div>
           </header>
 
