@@ -8,6 +8,7 @@ import { Gift } from '@/types';
 export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string, guestEmail: string, quantity: number = 1) {
   if (!guestName || !guestLastname) throw new Error("Nombre requerido");
   if (!guestEmail) throw new Error("Correo requerido");
+  if (!Number.isFinite(quantity) || quantity < 1) throw new Error("Cantidad inválida");
   const fullName = `${guestName} ${guestLastname}`;
   const animal = "Osito"; // Mock
   
@@ -19,9 +20,22 @@ export async function reserveGift(slug: string, id: string, guestName: string, g
     const data = giftDoc.data()!;
     const neededQuantity = data.neededQuantity || 1;
     const reservedCount = data.reservedCount || 0;
+    const minQuantity = Math.max(1, Number(data.minQuantity) || 1);
+
+    if (quantity < minQuantity) {
+      throw new Error(
+        `No se puede bajar. El mínimo para este producto es ${minQuantity}`
+      );
+    }
     
     if (!data.unlimited && reservedCount + quantity > neededQuantity) {
       throw new Error(`Solo quedan ${neededQuantity - reservedCount} unidades disponibles`);
+    }
+
+    if (!data.unlimited && neededQuantity - reservedCount < minQuantity) {
+      throw new Error(
+        `No hay unidades suficientes. El mínimo para este producto es ${minQuantity}`
+      );
     }
 
     const prevList = data.reservedByList || [];

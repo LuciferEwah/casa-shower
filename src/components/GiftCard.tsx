@@ -8,9 +8,15 @@ import { GuestIdentity } from './GuestView';
 import { getGiftCategory, categoryLabels } from '@/lib/categories';
 
 export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gift, guestIdentity?: GuestIdentity }) {
+  const count = gift.reservedCount || 0;
+  const needed = gift.neededQuantity || 1;
+  const minQuantity = Math.max(1, gift.minQuantity || 1);
+  const remaining = gift.unlimited ? Number.POSITIVE_INFINITY : Math.max(0, needed - count);
+  const canMeetMinimum = gift.unlimited || remaining >= minQuantity;
+
   const [loading, setLoading] = useState(false);
   const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [selectedQuantity, setSelectedQuantity] = useState(minQuantity);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
 
   const showToast = (message: string, severity: 'success' | 'error' | 'warning') => {
@@ -25,9 +31,32 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
     return false;
   };
 
+  const handleDecrease = () => {
+    if (selectedQuantity <= minQuantity) {
+      showToast(
+        `No se puede bajar. El mínimo para este producto es ${minQuantity}`,
+        'warning'
+      );
+      return;
+    }
+    setSelectedQuantity((prev) => prev - 1);
+  };
+
+  const handleIncrease = () => {
+    if (!gift.unlimited && selectedQuantity >= remaining) return;
+    setSelectedQuantity((prev) => prev + 1);
+  };
+
   const handleReserve = async () => {
     if (!guestIdentity) {
       showToast("Error: No estás identificado", 'error');
+      return;
+    }
+    if (selectedQuantity < minQuantity) {
+      showToast(
+        `No se puede bajar. El mínimo para este producto es ${minQuantity}`,
+        'warning'
+      );
       return;
     }
     
@@ -58,13 +87,15 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
     setLoading(false);
   };
 
-  const count = gift.reservedCount || 0;
-  const needed = gift.neededQuantity || 1;
-  const available = gift.unlimited ? true : count < needed;
+  const available = gift.unlimited ? true : count < needed && canMeetMinimum;
   const reservedByMe = isReservedByMe();
   
   const category = getGiftCategory(gift.price);
   const catStyle = categoryLabels[category];
+  const showQuantitySelector =
+    !reservedByMe &&
+    canMeetMinimum &&
+    (gift.unlimited || remaining > minQuantity || minQuantity > 1);
 
   return (
     <Card className={`relative overflow-hidden rounded-[2rem] border transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1 ${!available && !reservedByMe ? 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700/50 grayscale-[50%]' : 'bg-white/70 dark:bg-slate-900/70 border-white/60 dark:border-slate-700/50 backdrop-blur-xl'}`}>
@@ -118,8 +149,13 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
           <Typography variant="h6" className="font-bold text-purple-600 dark:text-purple-400">
             ${gift.price.toLocaleString('es-CL')}
           </Typography>
-          <Typography variant="body2" className="text-slate-500 font-medium">
+          <Typography variant="body2" className="text-slate-500 font-medium text-right">
             {gift.unlimited ? 'Ilimitado' : `Reservados: ${count} / ${needed}`}
+            {minQuantity > 1 && (
+              <span className="block text-xs text-purple-600 dark:text-purple-400 mt-0.5">
+                Mín. {minQuantity} por reserva
+              </span>
+            )}
           </Typography>
         </div>
 
@@ -139,28 +175,46 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
             <div className="mt-2">
               {!available && !reservedByMe ? (
                 <Box className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 text-center border border-slate-200 dark:border-slate-700">
-                  <Typography className="text-slate-500 dark:text-slate-400 font-medium">Este regalo ya fue reservado.</Typography>
+                  <Typography className="text-slate-500 dark:text-slate-400 font-medium">
+                    {!gift.unlimited && remaining > 0 && remaining < minQuantity
+                      ? `Quedan ${remaining}, pero el mínimo es ${minQuantity}. No se puede reservar.`
+                      : 'Este regalo ya fue reservado.'}
+                  </Typography>
                 </Box>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {(!reservedByMe && (gift.unlimited || needed - count > 1)) && (
-                    <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
-                      <Typography variant="body2" className="font-bold text-slate-700 dark:text-slate-300">
-                        Cantidad a reservar:
-                      </Typography>
-                      <div className="flex items-center gap-3">
-                        <button 
-                          disabled={selectedQuantity <= 1}
-                          onClick={() => setSelectedQuantity(prev => prev - 1)}
-                          className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-30 transition-colors"
-                        >-</button>
-                        <Typography className="font-bold w-4 text-center">{selectedQuantity}</Typography>
-                        <button 
-                          disabled={!gift.unlimited && selectedQuantity >= needed - count}
-                          onClick={() => setSelectedQuantity(prev => prev + 1)}
-                          className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-30 transition-colors"
-                        >+</button>
+                  {showQuantitySelector && (
+                    <div className="flex flex-col gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <Typography variant="body2" className="font-bold text-slate-700 dark:text-slate-300">
+                          Cantidad a reservar:
+                        </Typography>
+                        <div className="flex items-center gap-3">
+                          <button 
+                            type="button"
+                            onClick={handleDecrease}
+                            className={`w-8 h-8 rounded-full font-bold transition-colors ${
+                              selectedQuantity <= minQuantity
+                                ? 'bg-slate-200/70 dark:bg-slate-700/70 text-slate-400 dark:text-slate-500'
+                                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600'
+                            }`}
+                            aria-label="Disminuir cantidad"
+                          >-</button>
+                          <Typography className="font-bold min-w-[1.5rem] text-center">{selectedQuantity}</Typography>
+                          <button 
+                            type="button"
+                            disabled={!gift.unlimited && selectedQuantity >= remaining}
+                            onClick={handleIncrease}
+                            className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-30 transition-colors"
+                            aria-label="Aumentar cantidad"
+                          >+</button>
+                        </div>
                       </div>
+                      {minQuantity > 1 && (
+                        <Typography variant="caption" className="text-slate-500 dark:text-slate-400">
+                          Mínimo {minQuantity} · no se puede reservar menos
+                        </Typography>
+                      )}
                     </div>
                   )}
 
@@ -168,7 +222,7 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
                     fullWidth 
                     variant="contained" 
                     color="primary"
-                    disabled={loading || (reservedByMe && !gift.unlimited)} 
+                    disabled={loading || (reservedByMe && !gift.unlimited) || (!reservedByMe && !canMeetMinimum)} 
                     onClick={handleReserve}
                     className="rounded-xl py-3 font-bold shadow-md hover:shadow-lg transition-all"
                   >

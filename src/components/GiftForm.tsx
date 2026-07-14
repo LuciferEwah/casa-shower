@@ -12,11 +12,24 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
   const [formPrice, setFormPrice] = useState(editGift?.price || 0);
   const [formUnlimited, setFormUnlimited] = useState(editGift?.unlimited || false);
   const [formNeededQuantity, setFormNeededQuantity] = useState(editGift?.neededQuantity || 1);
+  const [formMinQuantity, setFormMinQuantity] = useState(editGift?.minQuantity || 1);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
 
   const handleSave = async () => {
     if (!formName || !formPrice) {
       setToast({ open: true, message: "Completa nombre y precio", severity: 'warning' });
+      return;
+    }
+
+    const needed = Math.max(1, Number(formNeededQuantity) || 1);
+    const minQ = Math.max(1, Number(formMinQuantity) || 1);
+
+    if (minQ < 1) {
+      setToast({ open: true, message: "La cantidad mínima debe ser al menos 1", severity: 'warning' });
+      return;
+    }
+    if (!formUnlimited && minQ > needed) {
+      setToast({ open: true, message: "La cantidad mínima no puede ser mayor que la cantidad necesaria", severity: 'warning' });
       return;
     }
 
@@ -26,7 +39,8 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
       link: formLink,
       price: Number(formPrice),
       unlimited: formUnlimited,
-      neededQuantity: Number(formNeededQuantity),
+      neededQuantity: needed,
+      minQuantity: minQ,
       reservedCount: editGift?.reservedCount || 0,
       reservedBy: editGift?.reservedBy || null,
       reservedByAnimal: editGift?.reservedByAnimal || null,
@@ -50,7 +64,27 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 mt-2">
         <TextField label="Nombre del regalo" fullWidth value={formName} onChange={e => setFormName(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
         <TextField label="Precio de Referencia" type="number" fullWidth value={formPrice} onChange={e => setFormPrice(Number(e.target.value))} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
-        <TextField label="Cantidad Necesaria" type="number" fullWidth value={formNeededQuantity} onChange={e => setFormNeededQuantity(Number(e.target.value))} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" disabled={formUnlimited} />
+        <TextField
+          label="Cantidad Necesaria"
+          type="number"
+          fullWidth
+          value={formNeededQuantity}
+          onChange={e => setFormNeededQuantity(Number(e.target.value))}
+          className="bg-white/40 dark:bg-slate-950/40 rounded-2xl"
+          disabled={formUnlimited}
+          slotProps={{ htmlInput: { min: 1 } }}
+          helperText={formUnlimited ? 'No aplica si es ilimitado' : 'Total de unidades que se necesitan'}
+        />
+        <TextField
+          label="Cantidad mínima por reserva"
+          type="number"
+          fullWidth
+          value={formMinQuantity}
+          onChange={e => setFormMinQuantity(Number(e.target.value))}
+          className="bg-white/40 dark:bg-slate-950/40 rounded-2xl"
+          slotProps={{ htmlInput: { min: 1 } }}
+          helperText="El invitado no puede reservar menos que esto (ej. 6)"
+        />
         <TextField label="URL de Imagen" fullWidth value={formImage} onChange={e => setFormImage(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
         <TextField label="Link de compra (Opcional)" fullWidth value={formLink} onChange={e => setFormLink(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl sm:col-span-2" />
       </div>

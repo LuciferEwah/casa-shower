@@ -6,6 +6,8 @@ export interface Gift {
   price: number;
   unlimited: boolean;
   neededQuantity?: number;
+  /** Mínimo de unidades por reserva (no se puede bajar de este valor). Default 1. */
+  minQuantity?: number;
   reservedCount?: number;
   reservedBy: string | null;
   reservedByAnimal: string | null;
