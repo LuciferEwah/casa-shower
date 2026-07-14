@@ -92,13 +92,22 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
           image={gift.image}
           alt={gift.name}
           onClick={() => setImageModalOpen(true)}
+          onError={(e) => {
+            const el = e.currentTarget as HTMLImageElement;
+            el.style.display = 'none';
+            const fallback = el.parentElement?.querySelector('[data-img-fallback]');
+            if (fallback instanceof HTMLElement) fallback.style.display = 'flex';
+          }}
           className="h-[220px] object-cover cursor-pointer hover:opacity-90 transition-opacity"
         />
-      ) : (
-        <div className="h-[220px] w-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-7xl">
-          🎁
-        </div>
-      )}
+      ) : null}
+      <div
+        data-img-fallback
+        className="h-[220px] w-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-7xl"
+        style={{ display: gift.image ? 'none' : 'flex' }}
+      >
+        🎁
+      </div>
       
       <CardContent className="p-6">
         <Typography variant="h5" className="font-bold text-slate-800 dark:text-slate-100 mb-1 leading-tight">
