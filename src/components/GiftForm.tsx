@@ -5,7 +5,18 @@ import { Gift } from '@/types';
 import { saveGift } from '@/app/actions/giftActions';
 import { Typography, TextField, Button, FormControlLabel, Switch, Snackbar, Alert, Box } from '@mui/material';
 
-export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?: Gift | null, onSaved: () => void }) {
+export function GiftForm({
+  slug,
+  editGift,
+  onSaved,
+  compact = false,
+}: {
+  slug: string;
+  editGift?: Gift | null;
+  onSaved: () => void;
+  /** Layout más denso para panel lateral en admin PC */
+  compact?: boolean;
+}) {
   const [formName, setFormName] = useState(editGift?.name || '');
   const [formImage, setFormImage] = useState(editGift?.image || '');
   const [formLink, setFormLink] = useState(editGift?.link || '');
@@ -56,51 +67,75 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
   };
 
   return (
-    <Box className="p-6 sm:p-8 mb-12 rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl">
-      <Typography variant="h5" className="font-bold text-center text-purple-900 dark:text-purple-100" sx={{ mb: 4 }}>
-        {editGift ? 'Editar Regalo' : 'Agregar Nuevo Regalo'}
+    <Box
+      className={[
+        'rounded-[2rem] bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 shadow-xl',
+        compact ? 'p-4 sm:p-5 mb-0' : 'p-6 sm:p-8 mb-12',
+      ].join(' ')}
+    >
+      <Typography
+        variant={compact ? 'h6' : 'h5'}
+        className="font-bold text-center text-purple-900 dark:text-purple-100"
+        sx={{ mb: compact ? 2 : 4 }}
+      >
+        {editGift ? '✏️ Editar Regalo' : '➕ Agregar Nuevo Regalo'}
       </Typography>
+      {editGift && compact && (
+        <Typography
+          variant="body2"
+          className="text-center text-slate-500 dark:text-slate-400 mb-3 line-clamp-2 px-1"
+        >
+          {editGift.name}
+        </Typography>
+      )}
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8 mt-2">
-        <TextField label="Nombre del regalo" fullWidth value={formName} onChange={e => setFormName(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
-        <TextField label="Precio de Referencia" type="number" fullWidth value={formPrice} onChange={e => setFormPrice(Number(e.target.value))} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
+      <div
+        className={[
+          'grid gap-3 mb-4 mt-2',
+          compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-8',
+        ].join(' ')}
+      >
+        <TextField label="Nombre del regalo" fullWidth size={compact ? 'small' : 'medium'} value={formName} onChange={e => setFormName(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
+        <TextField label="Precio de Referencia" type="number" fullWidth size={compact ? 'small' : 'medium'} value={formPrice} onChange={e => setFormPrice(Number(e.target.value))} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
         <TextField
           label="Cantidad Necesaria"
           type="number"
           fullWidth
+          size={compact ? 'small' : 'medium'}
           value={formNeededQuantity}
           onChange={e => setFormNeededQuantity(Number(e.target.value))}
           className="bg-white/40 dark:bg-slate-950/40 rounded-2xl"
           disabled={formUnlimited}
           slotProps={{ htmlInput: { min: 1 } }}
-          helperText={formUnlimited ? 'No aplica si es ilimitado' : 'Total de unidades que se necesitan'}
+          helperText={compact ? undefined : (formUnlimited ? 'No aplica si es ilimitado' : 'Total de unidades que se necesitan')}
         />
         <TextField
           label="Cantidad mínima por reserva"
           type="number"
           fullWidth
+          size={compact ? 'small' : 'medium'}
           value={formMinQuantity}
           onChange={e => setFormMinQuantity(Number(e.target.value))}
           className="bg-white/40 dark:bg-slate-950/40 rounded-2xl"
           slotProps={{ htmlInput: { min: 1 } }}
-          helperText="El invitado no puede reservar menos que esto (ej. 6)"
+          helperText={compact ? undefined : 'El invitado no puede reservar menos que esto (ej. 6)'}
         />
-        <TextField label="URL de Imagen" fullWidth value={formImage} onChange={e => setFormImage(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
-        <TextField label="Link de compra (Opcional)" fullWidth value={formLink} onChange={e => setFormLink(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl sm:col-span-2" />
+        <TextField label="URL de Imagen" fullWidth size={compact ? 'small' : 'medium'} value={formImage} onChange={e => setFormImage(e.target.value)} className="bg-white/40 dark:bg-slate-950/40 rounded-2xl" />
+        <TextField label="Link de compra (Opcional)" fullWidth size={compact ? 'small' : 'medium'} value={formLink} onChange={e => setFormLink(e.target.value)} className={`bg-white/40 dark:bg-slate-950/40 rounded-2xl ${compact ? '' : 'sm:col-span-2'}`} />
       </div>
       
-      <div className="flex flex-col sm:flex-row justify-between items-center mt-8 pt-4">
+      <div className={`flex flex-col gap-3 ${compact ? 'mt-2' : 'sm:flex-row justify-between items-center mt-8 pt-4'}`}>
         <FormControlLabel 
-          control={<Switch checked={formUnlimited} onChange={e => setFormUnlimited(e.target.checked)} color="primary" />} 
-          label="Regalo ilimitado (Todos pueden reservar)" 
-          className="text-slate-700 dark:text-slate-300 mb-6 sm:mb-0"
+          control={<Switch checked={formUnlimited} onChange={e => setFormUnlimited(e.target.checked)} color="primary" size="small" />} 
+          label="Regalo ilimitado"
+          className="text-slate-700 dark:text-slate-300"
         />
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+        <div className="flex flex-col sm:flex-row gap-2 w-full">
           {editGift && (
             <Button 
               variant="outlined" 
               color="inherit" 
-              className="rounded-full px-8 py-3.5 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 w-full sm:w-auto shadow-sm"
+              className="rounded-full px-6 py-2.5 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 w-full shadow-sm"
               onClick={onSaved}
             >
               Cancelar
@@ -109,7 +144,7 @@ export function GiftForm({ slug, editGift, onSaved }: { slug: string, editGift?:
           <Button 
             variant="contained" 
             color="primary" 
-            className="rounded-full px-10 py-3.5 font-bold shadow-md hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 w-full sm:w-auto"
+            className="rounded-full px-6 py-2.5 font-bold shadow-md hover:shadow-lg hover:scale-[1.02] transition-transform duration-300 w-full"
             onClick={handleSave}
           >
             {editGift ? 'Guardar Cambios' : 'Agregar Regalo'}

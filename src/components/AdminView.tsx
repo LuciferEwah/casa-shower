@@ -193,7 +193,7 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   }, [giftSafePage, giftTotalPages]);
 
   return (
-    <section className="admin-view w-full max-w-4xl mx-auto">
+    <section className="admin-view w-full max-w-7xl mx-auto">
       
       {/* Menu Tabs */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
@@ -357,156 +357,194 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
 
       {currentTab === 'gifts' && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <GiftForm slug={slug} key={editingGift ? editingGift.id : 'new'} editGift={editingGift} onSaved={() => setEditingGift(null)} />
-
-          {/* Buscador sticky + paginado (no renderiza todos a la vez) */}
-          <div
-            className={[
-              'sticky z-50 mt-10 mb-4 p-3 sm:p-4',
-              'top-[max(0px,env(safe-area-inset-top,0px))]',
-              'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl',
-              'rounded-[1.5rem] border border-white/70 dark:border-slate-700/70',
-              'shadow-lg shadow-purple-900/5 dark:shadow-black/30',
-              'flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between',
-            ].join(' ')}
-          >
-            <div className="relative w-full sm:max-w-md flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-slate-400">🔍</span>
-              </div>
-              <input
-                type="search"
-                placeholder="Buscar regalo por nombre, precio o link..."
-                value={giftSearch}
-                onChange={(e) => {
-                  setGiftSearch(e.target.value);
-                  setGiftPage(1);
-                }}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-950/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-base"
-                enterKeyHint="search"
+          {/* PC: editar izquierda | lista derecha · Móvil: apilado */}
+          <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
+            {/* Panel editar (izquierda en PC, sticky) */}
+            <aside className="w-full lg:w-[min(420px,38%)] flex-shrink-0 lg:sticky lg:top-4 lg:max-h-[calc(100vh-1.5rem)] lg:overflow-y-auto lg:pb-4 order-1">
+              <GiftForm
+                slug={slug}
+                key={editingGift ? editingGift.id : 'new'}
+                editGift={editingGift}
+                onSaved={() => setEditingGift(null)}
+                compact
               />
-            </div>
-            <Typography className="text-sm text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap px-1">
-              {filteredAdminGifts.length === 0
-                ? 'Sin resultados'
-                : `Mostrando ${(giftSafePage - 1) * ADMIN_GIFTS_PAGE_SIZE + 1}–${Math.min(giftSafePage * ADMIN_GIFTS_PAGE_SIZE, filteredAdminGifts.length)} de ${filteredAdminGifts.length}`}
-              {giftSearch.trim() && filteredAdminGifts.length !== gifts.length && (
-                <span className="text-slate-400"> · total {gifts.length}</span>
-              )}
-            </Typography>
-          </div>
+            </aside>
 
-          <div className="flex flex-col gap-5">
-            {pagedAdminGifts.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 dark:text-slate-400 rounded-[2rem] bg-white/40 dark:bg-slate-900/40 border border-white/50 dark:border-slate-700/50">
-                {gifts.length === 0
-                  ? 'Aún no hay regalos. Agrega el primero arriba.'
-                  : 'No hay regalos que coincidan con la búsqueda.'}
-              </div>
-            ) : (
-              pagedAdminGifts.map((gift) => (
-              <div key={gift.id} className="flex flex-col md:flex-row items-center justify-between p-5 sm:p-6 rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 shadow-md transition-all hover:shadow-lg">
-                <div className="flex items-center gap-6 mb-6 md:mb-0 w-full md:w-auto">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-purple-100/50 dark:bg-purple-900/30 overflow-hidden flex-shrink-0 border border-white/60 dark:border-purple-800 shadow-sm">
-                    {gift.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={gift.image} alt={gift.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl">🎁</div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <Typography variant="h6" className="font-bold text-slate-800 dark:text-slate-100 leading-tight mb-1 text-lg sm:text-xl">
-                      {gift.name}
-                    </Typography>
-                    <Typography variant="body1" className="text-purple-600 dark:text-purple-400 font-bold mb-2">
-                      ${gift.price.toLocaleString('es-CL')} {gift.unlimited && <span className="text-slate-400 font-medium ml-1">• Ilimitado</span>}
-                      {(gift.minQuantity ?? 1) > 1 && (
-                        <span className="text-slate-400 font-medium ml-1">• Mín. {gift.minQuantity}</span>
-                      )}
-                    </Typography>
-                    {(gift.reservedCount && gift.reservedCount > 0) ? (
-                      <Chip 
-                        size="small" 
-                        color="secondary" 
-                        variant="outlined" 
-                        label={`Reservado (${gift.reservedCount})`} 
-                        className="font-bold border-fuchsia-300 dark:border-fuchsia-800 text-fuchsia-700 dark:text-fuchsia-300"
-                      />
-                    ) : null}
-                  </div>
-                </div>
-                
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-2 md:mt-0 justify-center md:justify-end">
-                  <Button size="large" variant="outlined" color="primary" className="w-full sm:w-auto rounded-full font-bold px-8 py-2.5 sm:py-3 bg-white/50 dark:bg-slate-900/50 shadow-sm" onClick={() => setEditingGift(gift)}>
-                    Editar
-                  </Button>
-                  <Button size="large" variant="outlined" color="error" className="w-full sm:w-auto rounded-full font-bold px-8 py-2.5 sm:py-3 bg-white/50 dark:bg-slate-900/50 shadow-sm" onClick={() => handleDelete(gift.id)}>
-                    Eliminar
-                  </Button>
-                  {(gift.reservedCount && gift.reservedCount > 0) ? (
-                    <Button size="large" variant="contained" color="secondary" className="w-full sm:w-auto rounded-full font-bold px-8 py-2.5 sm:py-3 shadow-md" onClick={() => handleUnreserve(gift.id)}>
-                      Liberar Todo
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-              ))
-            )}
-          </div>
-
-          {filteredAdminGifts.length > ADMIN_GIFTS_PAGE_SIZE && (
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
-              <Button
-                variant="outlined"
-                size="small"
-                disabled={giftSafePage <= 1}
-                onClick={() => {
-                  setGiftPage((p) => Math.max(1, Math.min(p, giftTotalPages) - 1));
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="rounded-full px-4 border-slate-300 dark:border-slate-600"
+            {/* Panel productos (derecha en PC) */}
+            <div className="flex-1 min-w-0 order-2">
+              {/* Buscador sticky */}
+              <div
+                className={[
+                  'sticky z-50 mb-4 p-3 sm:p-4',
+                  'top-[max(0px,env(safe-area-inset-top,0px))]',
+                  'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl',
+                  'rounded-[1.5rem] border border-white/70 dark:border-slate-700/70',
+                  'shadow-lg shadow-purple-900/5 dark:shadow-black/30',
+                  'flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between',
+                ].join(' ')}
               >
-                ← Anterior
-              </Button>
-              {giftPageNumbers.map((p, idx) =>
-                p === '…' ? (
-                  <span key={`e-${idx}`} className="px-2 text-slate-400">
-                    …
-                  </span>
-                ) : (
-                  <Button
-                    key={p}
-                    variant={giftSafePage === p ? 'contained' : 'outlined'}
-                    size="small"
-                    onClick={() => {
-                      setGiftPage(p);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                <div className="relative w-full sm:max-w-md flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-slate-400">🔍</span>
+                  </div>
+                  <input
+                    type="search"
+                    placeholder="Buscar regalo por nombre, precio o link..."
+                    value={giftSearch}
+                    onChange={(e) => {
+                      setGiftSearch(e.target.value);
+                      setGiftPage(1);
                     }}
-                    className={`min-w-[40px] rounded-full ${
-                      giftSafePage === p
-                        ? 'bg-purple-700 text-white'
-                        : 'border-slate-300 dark:border-slate-600'
-                    }`}
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-950/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-base"
+                    enterKeyHint="search"
+                  />
+                </div>
+                <Typography className="text-sm text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap px-1">
+                  {filteredAdminGifts.length === 0
+                    ? 'Sin resultados'
+                    : `Mostrando ${(giftSafePage - 1) * ADMIN_GIFTS_PAGE_SIZE + 1}–${Math.min(giftSafePage * ADMIN_GIFTS_PAGE_SIZE, filteredAdminGifts.length)} de ${filteredAdminGifts.length}`}
+                  {giftSearch.trim() && filteredAdminGifts.length !== gifts.length && (
+                    <span className="text-slate-400"> · total {gifts.length}</span>
+                  )}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {pagedAdminGifts.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 dark:text-slate-400 rounded-[2rem] bg-white/40 dark:bg-slate-900/40 border border-white/50 dark:border-slate-700/50">
+                    {gifts.length === 0
+                      ? 'Aún no hay regalos. Agrégalos en el panel de la izquierda.'
+                      : 'No hay regalos que coincidan con la búsqueda.'}
+                  </div>
+                ) : (
+                  pagedAdminGifts.map((gift) => {
+                    const isSelected = editingGift?.id === gift.id;
+                    return (
+                      <div
+                        key={gift.id}
+                        className={[
+                          'flex flex-col sm:flex-row items-center justify-between p-4 sm:p-5 rounded-[1.5rem] backdrop-blur-lg border shadow-md transition-all hover:shadow-lg',
+                          isSelected
+                            ? 'bg-purple-50/90 dark:bg-purple-950/40 border-purple-400 dark:border-purple-600 ring-2 ring-purple-400/40'
+                            : 'bg-white/60 dark:bg-slate-900/60 border-white/50 dark:border-slate-700/50',
+                        ].join(' ')}
+                      >
+                        <div className="flex items-center gap-4 mb-4 sm:mb-0 w-full sm:w-auto min-w-0">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-purple-100/50 dark:bg-purple-900/30 overflow-hidden flex-shrink-0 border border-white/60 dark:border-purple-800 shadow-sm">
+                            {gift.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={gift.image} alt={gift.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-3xl">🎁</div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <Typography variant="subtitle1" className="font-bold text-slate-800 dark:text-slate-100 leading-tight mb-0.5 text-base sm:text-lg line-clamp-2">
+                              {gift.name}
+                            </Typography>
+                            <Typography variant="body2" className="text-purple-600 dark:text-purple-400 font-bold mb-1">
+                              ${gift.price.toLocaleString('es-CL')}
+                              {gift.unlimited && <span className="text-slate-400 font-medium ml-1">• Ilimitado</span>}
+                              {(gift.minQuantity ?? 1) > 1 && (
+                                <span className="text-slate-400 font-medium ml-1">• Mín. {gift.minQuantity}</span>
+                              )}
+                            </Typography>
+                            {(gift.reservedCount && gift.reservedCount > 0) ? (
+                              <Chip
+                                size="small"
+                                color="secondary"
+                                variant="outlined"
+                                label={`Reservado (${gift.reservedCount})`}
+                                className="font-bold border-fuchsia-300 dark:border-fuchsia-800 text-fuchsia-700 dark:text-fuchsia-300"
+                              />
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-row flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                          <Button
+                            size="medium"
+                            variant={isSelected ? 'contained' : 'outlined'}
+                            color="primary"
+                            className="rounded-full font-bold px-5 py-2 bg-white/50 dark:bg-slate-900/50 shadow-sm"
+                            onClick={() => setEditingGift(gift)}
+                          >
+                            {isSelected ? 'Editando…' : 'Editar'}
+                          </Button>
+                          <Button
+                            size="medium"
+                            variant="outlined"
+                            color="error"
+                            className="rounded-full font-bold px-5 py-2 bg-white/50 dark:bg-slate-900/50 shadow-sm"
+                            onClick={() => handleDelete(gift.id)}
+                          >
+                            Eliminar
+                          </Button>
+                          {(gift.reservedCount && gift.reservedCount > 0) ? (
+                            <Button
+                              size="medium"
+                              variant="contained"
+                              color="secondary"
+                              className="rounded-full font-bold px-5 py-2 shadow-md"
+                              onClick={() => handleUnreserve(gift.id)}
+                            >
+                              Liberar
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {filteredAdminGifts.length > ADMIN_GIFTS_PAGE_SIZE && (
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={giftSafePage <= 1}
+                    onClick={() => setGiftPage((p) => Math.max(1, Math.min(p, giftTotalPages) - 1))}
+                    className="rounded-full px-4 border-slate-300 dark:border-slate-600"
                   >
-                    {p}
+                    ← Anterior
                   </Button>
-                )
+                  {giftPageNumbers.map((p, idx) =>
+                    p === '…' ? (
+                      <span key={`e-${idx}`} className="px-2 text-slate-400">
+                        …
+                      </span>
+                    ) : (
+                      <Button
+                        key={p}
+                        variant={giftSafePage === p ? 'contained' : 'outlined'}
+                        size="small"
+                        onClick={() => setGiftPage(p)}
+                        className={`min-w-[40px] rounded-full ${
+                          giftSafePage === p
+                            ? 'bg-purple-700 text-white'
+                            : 'border-slate-300 dark:border-slate-600'
+                        }`}
+                      >
+                        {p}
+                      </Button>
+                    )
+                  )}
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={giftSafePage >= giftTotalPages}
+                    onClick={() =>
+                      setGiftPage((p) => Math.min(giftTotalPages, Math.min(p, giftTotalPages) + 1))
+                    }
+                    className="rounded-full px-4 border-slate-300 dark:border-slate-600"
+                  >
+                    Siguiente →
+                  </Button>
+                </div>
               )}
-              <Button
-                variant="outlined"
-                size="small"
-                disabled={giftSafePage >= giftTotalPages}
-                onClick={() => {
-                  setGiftPage((p) => Math.min(giftTotalPages, Math.min(p, giftTotalPages) + 1));
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="rounded-full px-4 border-slate-300 dark:border-slate-600"
-              >
-                Siguiente →
-              </Button>
             </div>
-          )}
+          </div>
         </div>
       )}
 
