@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Gift, Settings } from '@/types';
 import { deleteGift, unreserveGift, adminRemoveReservationIndex, adminRemoveReservationByEmail } from '@/app/actions/giftActions';
 import { updateEventSettings } from '@/app/actions/eventActions';
 import { GiftForm } from './GiftForm';
 import { Button, Typography, Chip, Box, TextField, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+
+const ADMIN_GIFTS_PAGE_SIZE = 10;
 
 export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift[], settings: Settings }) {
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
@@ -14,6 +16,8 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
   const [currentTab, setCurrentTab] = useState<'gifts' | 'analytics' | 'settings'>('gifts');
   const [guestSearch, setGuestSearch] = useState('');
+  const [giftSearch, setGiftSearch] = useState('');
+  const [giftPage, setGiftPage] = useState(1);
   
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; message: string; onConfirm: () => void }>({
     open: false,
@@ -149,6 +153,44 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     g.name.toLowerCase().includes(guestSearch.toLowerCase()) || 
     (g.email && g.email.toLowerCase().includes(guestSearch.toLowerCase()))
   );
+
+  const filteredAdminGifts = useMemo(() => {
+    const q = giftSearch.trim().toLowerCase();
+    if (!q) return gifts;
+    return gifts.filter((g) => {
+      const name = (g.name || '').toLowerCase();
+      const link = (g.link || '').toLowerCase();
+      const price = String(g.price ?? '');
+      return name.includes(q) || link.includes(q) || price.includes(q);
+    });
+  }, [gifts, giftSearch]);
+
+  const giftTotalPages = Math.max(1, Math.ceil(filteredAdminGifts.length / ADMIN_GIFTS_PAGE_SIZE));
+  const giftSafePage = Math.min(Math.max(1, giftPage), giftTotalPages);
+  const pagedAdminGifts = useMemo(() => {
+    const start = (giftSafePage - 1) * ADMIN_GIFTS_PAGE_SIZE;
+    return filteredAdminGifts.slice(start, start + ADMIN_GIFTS_PAGE_SIZE);
+  }, [filteredAdminGifts, giftSafePage]);
+
+  const giftPageNumbers = useMemo(() => {
+    const pages: (number | '…')[] = [];
+    if (giftTotalPages <= 7) {
+      for (let i = 1; i <= giftTotalPages; i++) pages.push(i);
+      return pages;
+    }
+    pages.push(1);
+    if (giftSafePage > 3) pages.push('…');
+    for (
+      let i = Math.max(2, giftSafePage - 1);
+      i <= Math.min(giftTotalPages - 1, giftSafePage + 1);
+      i++
+    ) {
+      pages.push(i);
+    }
+    if (giftSafePage < giftTotalPages - 2) pages.push('…');
+    pages.push(giftTotalPages);
+    return pages;
+  }, [giftSafePage, giftTotalPages]);
 
   return (
     <section className="admin-view w-full max-w-4xl mx-auto">
@@ -317,12 +359,57 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           <GiftForm slug={slug} key={editingGift ? editingGift.id : 'new'} editGift={editingGift} onSaved={() => setEditingGift(null)} />
 
-          <div className="flex flex-col gap-5 mt-10">
-            {gifts.map(gift => (
+          {/* Buscador sticky + paginado (no renderiza todos a la vez) */}
+          <div
+            className={[
+              'sticky z-50 mt-10 mb-4 p-3 sm:p-4',
+              'top-[max(0px,env(safe-area-inset-top,0px))]',
+              'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl',
+              'rounded-[1.5rem] border border-white/70 dark:border-slate-700/70',
+              'shadow-lg shadow-purple-900/5 dark:shadow-black/30',
+              'flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between',
+            ].join(' ')}
+          >
+            <div className="relative w-full sm:max-w-md flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-slate-400">🔍</span>
+              </div>
+              <input
+                type="search"
+                placeholder="Buscar regalo por nombre, precio o link..."
+                value={giftSearch}
+                onChange={(e) => {
+                  setGiftSearch(e.target.value);
+                  setGiftPage(1);
+                }}
+                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-950/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-base"
+                enterKeyHint="search"
+              />
+            </div>
+            <Typography className="text-sm text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap px-1">
+              {filteredAdminGifts.length === 0
+                ? 'Sin resultados'
+                : `Mostrando ${(giftSafePage - 1) * ADMIN_GIFTS_PAGE_SIZE + 1}–${Math.min(giftSafePage * ADMIN_GIFTS_PAGE_SIZE, filteredAdminGifts.length)} de ${filteredAdminGifts.length}`}
+              {giftSearch.trim() && filteredAdminGifts.length !== gifts.length && (
+                <span className="text-slate-400"> · total {gifts.length}</span>
+              )}
+            </Typography>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            {pagedAdminGifts.length === 0 ? (
+              <div className="py-12 text-center text-slate-500 dark:text-slate-400 rounded-[2rem] bg-white/40 dark:bg-slate-900/40 border border-white/50 dark:border-slate-700/50">
+                {gifts.length === 0
+                  ? 'Aún no hay regalos. Agrega el primero arriba.'
+                  : 'No hay regalos que coincidan con la búsqueda.'}
+              </div>
+            ) : (
+              pagedAdminGifts.map((gift) => (
               <div key={gift.id} className="flex flex-col md:flex-row items-center justify-between p-5 sm:p-6 rounded-[2rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 shadow-md transition-all hover:shadow-lg">
                 <div className="flex items-center gap-6 mb-6 md:mb-0 w-full md:w-auto">
                   <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-purple-100/50 dark:bg-purple-900/30 overflow-hidden flex-shrink-0 border border-white/60 dark:border-purple-800 shadow-sm">
                     {gift.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={gift.image} alt={gift.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-4xl">🎁</div>
@@ -334,6 +421,9 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                     </Typography>
                     <Typography variant="body1" className="text-purple-600 dark:text-purple-400 font-bold mb-2">
                       ${gift.price.toLocaleString('es-CL')} {gift.unlimited && <span className="text-slate-400 font-medium ml-1">• Ilimitado</span>}
+                      {(gift.minQuantity ?? 1) > 1 && (
+                        <span className="text-slate-400 font-medium ml-1">• Mín. {gift.minQuantity}</span>
+                      )}
                     </Typography>
                     {(gift.reservedCount && gift.reservedCount > 0) ? (
                       <Chip 
@@ -361,8 +451,62 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                   ) : null}
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
+
+          {filteredAdminGifts.length > ADMIN_GIFTS_PAGE_SIZE && (
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={giftSafePage <= 1}
+                onClick={() => {
+                  setGiftPage((p) => Math.max(1, Math.min(p, giftTotalPages) - 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="rounded-full px-4 border-slate-300 dark:border-slate-600"
+              >
+                ← Anterior
+              </Button>
+              {giftPageNumbers.map((p, idx) =>
+                p === '…' ? (
+                  <span key={`e-${idx}`} className="px-2 text-slate-400">
+                    …
+                  </span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={giftSafePage === p ? 'contained' : 'outlined'}
+                    size="small"
+                    onClick={() => {
+                      setGiftPage(p);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`min-w-[40px] rounded-full ${
+                      giftSafePage === p
+                        ? 'bg-purple-700 text-white'
+                        : 'border-slate-300 dark:border-slate-600'
+                    }`}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                disabled={giftSafePage >= giftTotalPages}
+                onClick={() => {
+                  setGiftPage((p) => Math.min(giftTotalPages, Math.min(p, giftTotalPages) + 1));
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="rounded-full px-4 border-slate-300 dark:border-slate-600"
+              >
+                Siguiente →
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
