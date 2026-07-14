@@ -59,7 +59,8 @@ export default function EventPage() {
 
   return (
     <MuiThemeProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans relative overflow-x-hidden transition-colors duration-300 pb-20">
+      {/* overflow-x-clip (no hidden): hidden rompe position:sticky del buscador */}
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans relative overflow-x-clip transition-colors duration-300 pb-20">
         
         {/* Ambient Glows */}
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-400/30 dark:bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />

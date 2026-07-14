@@ -258,14 +258,18 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
         </Button>
       </div>
 
-      {/* Toolbar: sticky on mobile, normal on desktop */}
+      {/* Toolbar: sticky en PC y móvil — al bajar queda fija arriba; al subir vuelve a su lugar */}
       <div
         className={[
-          'z-30 mb-6 p-3 sm:p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[1.5rem] border border-white/60 dark:border-slate-800/60 shadow-md',
+          'sticky z-50 mb-6',
+          // safe-area + tope de pantalla
+          'top-[max(0px,env(safe-area-inset-top,0px))]',
+          'p-3 sm:p-4',
+          'bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl',
+          'rounded-[1.5rem]',
+          'border border-white/70 dark:border-slate-700/70',
+          'shadow-lg shadow-purple-900/5 dark:shadow-black/30',
           'flex flex-col md:flex-row gap-3 md:gap-4 justify-between items-stretch md:items-center',
-          // fixed-ish search bar feel on mobile
-          'sticky top-0 md:static md:top-auto',
-          'supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/80',
         ].join(' ')}
       >
         <div className="relative w-full md:max-w-xs flex-shrink-0">
