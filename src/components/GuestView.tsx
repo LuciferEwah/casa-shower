@@ -16,21 +16,6 @@ export interface GuestIdentity {
 }
 
 const DESKTOP_PAGE_SIZE = 12;
-const MOBILE_BATCH_SIZE = 8;
-
-function useIsDesktop(breakpointPx = 768) {
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia(`(min-width: ${breakpointPx}px)`);
-    const apply = () => setIsDesktop(mq.matches);
-    apply();
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, [breakpointPx]);
-
-  return isDesktop;
-}
 
 export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
   const [identity, setIdentity] = useState<GuestIdentity | null>(null);
@@ -53,11 +38,21 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
   const [sortOrder, setSortOrder] = useState<'default' | 'price_asc' | 'price_desc'>('price_asc');
   const [showFilters, setShowFilters] = useState(false);
 
-  // Desktop: page number. Mobile: how many batches loaded.
+  // Page number
   const [page, setPage] = useState(1);
-  const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_BATCH_SIZE);
 
-  const isDesktop = useIsDesktop(768);
+  const giftsAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToGifts = useCallback(() => {
+    if (giftsAnchorRef.current) {
+      const rect = giftsAnchorRef.current.getBoundingClientRect();
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      window.scrollTo({
+        top: rect.top + scrollTop - 16,
+        behavior: 'smooth',
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('casa_shower_guest');
@@ -100,7 +95,6 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
 
   const resetPagination = useCallback(() => {
     setPage(1);
-    setMobileVisibleCount(MOBILE_BATCH_SIZE);
   }, []);
 
   const filteredAndSortedGifts = useMemo(() => {
@@ -165,66 +159,10 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
   // Derive safe page without setState-in-effect
   const safePage = Math.min(Math.max(1, page), totalPages);
 
-  const desktopGifts = useMemo(() => {
+  const visibleGifts = useMemo(() => {
     const start = (safePage - 1) * DESKTOP_PAGE_SIZE;
     return filteredAndSortedGifts.slice(start, start + DESKTOP_PAGE_SIZE);
   }, [filteredAndSortedGifts, safePage]);
-
-  const mobileGifts = useMemo(() => {
-    return filteredAndSortedGifts.slice(0, mobileVisibleCount);
-  }, [filteredAndSortedGifts, mobileVisibleCount]);
-
-  const visibleGifts = isDesktop ? desktopGifts : mobileGifts;
-  const hasMoreMobile = !isDesktop && mobileVisibleCount < total;
-
-  const loadMoreMobile = useCallback(() => {
-    setMobileVisibleCount((n) => Math.min(n + MOBILE_BATCH_SIZE, total));
-  }, [total]);
-
-  const isLoadingRef = useRef(false);
-
-  // Reset loading flag whenever mobileVisibleCount changes
-  useEffect(() => {
-    isLoadingRef.current = false;
-  }, [mobileVisibleCount]);
-
-  // Infinite scroll on mobile via scroll event listener
-  useEffect(() => {
-    if (isDesktop || !hasMoreMobile) return;
-
-    let throttleTimer: NodeJS.Timeout | null = null;
-
-    const handleScroll = () => {
-      if (throttleTimer || isLoadingRef.current) return;
-
-      throttleTimer = setTimeout(() => {
-        throttleTimer = null;
-        
-        if (isLoadingRef.current) return;
-
-        const scrollPosition = window.innerHeight + window.scrollY;
-        // Trigger loading when within 400px of the bottom
-        const threshold = document.documentElement.scrollHeight - 400;
-
-        if (scrollPosition >= threshold) {
-          isLoadingRef.current = true;
-          loadMoreMobile();
-        }
-      }, 150); // Check every 150ms
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll);
-    
-    // Check initially in case the content doesn't fill the screen yet
-    handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      if (throttleTimer) clearTimeout(throttleTimer);
-    };
-  }, [isDesktop, hasMoreMobile, loadMoreMobile]);
 
   const pageNumbers = useMemo(() => {
     const pages: (number | '…')[] = [];
@@ -429,6 +367,9 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
         </Button>
       </div>
 
+      {/* Anchor for scrolling to gifts */}
+      <div ref={giftsAnchorRef} />
+
       {/* Toolbar: sticky en PC y móvil — al bajar queda fija arriba; al subir vuelve a su lugar */}
       <div
         className={[
@@ -462,12 +403,12 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
               />
             </div>
             
-            {/* Botón de más filtros para móvil */}
+            {/* Botón de más filtros */}
             <Button
               variant="outlined"
               size="medium"
               onClick={() => setShowFilters(!showFilters)}
-              className="md:hidden rounded-xl border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-3.5 py-2.5 flex items-center gap-1.5 min-w-[100px] h-[46px] bg-white/50 dark:bg-slate-950/50 hover:bg-slate-100 dark:hover:bg-slate-900"
+              className="rounded-xl border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-3.5 py-2.5 flex items-center gap-1.5 min-w-[100px] h-[46px] bg-white/50 dark:bg-slate-950/50 hover:bg-slate-100 dark:hover:bg-slate-900"
             >
               <span className="text-sm">Filtros</span>
               <span 
@@ -487,7 +428,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
                 onChange={(e) => {
                   setSortOrder(e.target.value as 'default' | 'price_asc' | 'price_desc');
                   resetPagination();
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  scrollToGifts();
                 }}
                 className="bg-white/50 dark:bg-slate-950/50 rounded-xl"
                 sx={{ borderRadius: '0.75rem' }}
@@ -503,8 +444,8 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
         {/* Fila 2 (Panel Colapsable): Filtros de Categorías y Reservas */}
         <div
           className={[
-            showFilters ? 'flex animate-in slide-in-from-top duration-300' : 'hidden md:flex',
-            'flex-col gap-4 border-t border-slate-100 dark:border-slate-800/60 pt-3 md:border-t-0 md:pt-0'
+            showFilters ? 'flex animate-in slide-in-from-top duration-300' : 'hidden',
+            'flex-col gap-4 border-t border-slate-100 dark:border-slate-800/60 pt-3'
           ].join(' ')}
         >
           {/* Ordenamiento (solo visible aquí en móvil) */}
@@ -564,7 +505,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
                     onClick={() => {
                       setCategoryFilter(cat.id);
                       resetPagination();
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      scrollToGifts();
                     }}
                     className={`rounded-full w-full py-1.5 whitespace-nowrap text-xs font-bold text-center justify-center ${
                       categoryFilter === cat.id
@@ -599,7 +540,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
                     onClick={() => {
                       setReservationFilter(status.id);
                       resetPagination();
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      scrollToGifts();
                     }}
                     className={`rounded-full w-full py-1.5 whitespace-nowrap text-xs font-bold text-center justify-center ${
                       reservationFilter === status.id
@@ -619,9 +560,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
       <div className="mb-4 text-sm text-slate-500 dark:text-slate-400 font-medium px-1">
         {total === 0
           ? 'Sin resultados'
-          : isDesktop
-            ? `Mostrando ${(safePage - 1) * DESKTOP_PAGE_SIZE + 1}–${Math.min(safePage * DESKTOP_PAGE_SIZE, total)} de ${total}`
-            : `Mostrando ${Math.min(mobileVisibleCount, total)} de ${total}`}
+          : `Mostrando ${(safePage - 1) * DESKTOP_PAGE_SIZE + 1}–${Math.min(safePage * DESKTOP_PAGE_SIZE, total)} de ${total}`}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
@@ -636,8 +575,8 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
         )}
       </div>
 
-      {/* Desktop pagination */}
-      {isDesktop && total > DESKTOP_PAGE_SIZE && (
+      {/* Pagination */}
+      {total > DESKTOP_PAGE_SIZE && (
         <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
           <Button
             variant="outlined"
@@ -645,7 +584,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
             disabled={safePage <= 1}
             onClick={() => {
               setPage((p) => Math.max(1, Math.min(p, totalPages) - 1));
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              scrollToGifts();
             }}
             className="rounded-full px-4 border-slate-300 dark:border-slate-600"
           >
@@ -664,7 +603,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
                 size="small"
                 onClick={() => {
                   setPage(p);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  scrollToGifts();
                 }}
                 className={`min-w-[40px] rounded-full ${
                   safePage === p
@@ -683,28 +622,12 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
             disabled={safePage >= totalPages}
             onClick={() => {
               setPage((p) => Math.min(totalPages, Math.min(p, totalPages) + 1));
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              scrollToGifts();
             }}
             className="rounded-full px-4 border-slate-300 dark:border-slate-600"
           >
             Siguiente →
           </Button>
-        </div>
-      )}
-
-      {/* Mobile infinite scroll sentinel */}
-      {!isDesktop && hasMoreMobile && (
-        <div className="mt-8 flex flex-col items-center gap-3 py-6">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-          <Typography className="text-sm text-slate-500 dark:text-slate-400">
-            Cargando más regalos…
-          </Typography>
-        </div>
-      )}
-
-      {!isDesktop && !hasMoreMobile && total > 0 && (
-        <div className="mt-8 text-center text-sm text-slate-400 py-4">
-          Fin de la lista · {total} regalos
         </div>
       )}
     </section>
