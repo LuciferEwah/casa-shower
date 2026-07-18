@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Gift } from '@/types';
 import { GiftCard } from './GiftCard';
-import { updateGuestReservations } from '@/app/actions/giftActions';
+import { updateGuestReservations, findExistingGuestIdentity } from '@/app/actions/giftActions';
 import { Typography, Button, Box, MenuItem, Select, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { GiftCategory, getGiftCategory } from '@/lib/categories';
 
@@ -50,6 +50,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [profileSuccessToast, setProfileSuccessToast] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const handleOpenProfile = () => {
     if (!identity) return;
@@ -104,7 +105,14 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
         childrenCount: profileHasChildren ? Number(profileChildrenCount) || 1 : undefined,
       };
 
-      await updateGuestReservations(slug, identity.email, newFullName, accompaniment);
+      await updateGuestReservations(
+        slug, 
+        identity.email, 
+        newFullName, 
+        profileName.trim(), 
+        profileLastname.trim(), 
+        accompaniment
+      );
 
       const updatedIdentity: GuestIdentity = {
         ...identity,
@@ -163,13 +171,38 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
     setIsLoaded(true);
   }, []);
 
-  const handleLogin = () => {
-    if (!formName.trim() || !formLastname.trim() || !formEmail.trim()) {
-      setError('Por favor completa todos los campos.');
+  const handleLogin = async () => {
+    if (!formEmail.trim()) {
+      setError('Por favor ingresa tu correo electrónico.');
       return;
     }
+
+    setLoginLoading(true);
+    setError('');
+
+    try {
+      const existing = await findExistingGuestIdentity(slug, formEmail.trim().toLowerCase());
+      if (existing.found && existing.identity) {
+        localStorage.setItem('casa_shower_guest', JSON.stringify(existing.identity));
+        setIdentity(existing.identity);
+        setProfileSuccessToast(true); // Muestra toast de éxito
+        setLoginLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.error("Error al buscar identidad de invitado existente:", e);
+    }
+
+    // Si no se encuentra perfil previo, requerir nombre y apellido
+    if (!formName.trim() || !formLastname.trim()) {
+      setError('No encontramos reservas previas con este correo. Por favor ingresa tu nombre y apellido para registrarte.');
+      setLoginLoading(false);
+      return;
+    }
+
     if (isCouple && !formPartnerName.trim()) {
       setError('Por favor ingresa el nombre de tu pareja / acompañante.');
+      setLoginLoading(false);
       return;
     }
 
@@ -186,6 +219,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
 
     localStorage.setItem('casa_shower_guest', JSON.stringify(newIdentity));
     setIdentity(newIdentity);
+    setLoginLoading(false);
   };
 
   const resetPagination = useCallback(() => {
@@ -451,9 +485,10 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
               color="primary"
               size="large"
               onClick={handleLogin}
+              disabled={loginLoading}
               className="w-full rounded-full py-4 font-bold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all bg-gradient-to-r from-purple-700 to-purple-900 text-white border border-purple-500/30"
             >
-              Entrar a la Lista
+              {loginLoading ? <CircularProgress size={26} color="inherit" /> : 'Entrar a la Lista'}
             </Button>
           </div>
         </Box>

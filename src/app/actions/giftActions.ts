@@ -15,6 +15,7 @@ export async function reserveGift(
   accompaniment?: {
     isCouple?: boolean;
     partnerName?: string;
+    partnerLastname?: string;
     hasChildren?: boolean;
     childrenCount?: number;
   }
@@ -56,8 +57,11 @@ export async function reserveGift(
       name: fullName, 
       animal, 
       email: guestEmail,
+      firstName: guestName,
+      lastName: guestLastname,
       isCouple: accompaniment?.isCouple || false,
       partnerName: accompaniment?.partnerName || null,
+      partnerLastname: accompaniment?.partnerLastname || null,
       hasChildren: accompaniment?.hasChildren || false,
       childrenCount: accompaniment?.childrenCount || 0
     });
@@ -245,6 +249,8 @@ export async function updateGuestReservations(
   slug: string, 
   email: string, 
   fullName: string,
+  firstName: string,
+  lastName: string,
   accompaniment: {
     isCouple?: boolean;
     partnerName?: string;
@@ -267,8 +273,11 @@ export async function updateGuestReservations(
         name: string;
         animal: string;
         email?: string;
+        firstName?: string;
+        lastName?: string;
         isCouple?: boolean;
         partnerName?: string;
+        partnerLastname?: string;
         hasChildren?: boolean;
         childrenCount?: number;
       }) => {
@@ -277,8 +286,11 @@ export async function updateGuestReservations(
           return {
             ...r,
             name: fullName,
+            firstName: firstName,
+            lastName: lastName,
             isCouple: accompaniment.isCouple || false,
             partnerName: accompaniment.partnerName || null,
+            partnerLastname: accompaniment.partnerLastname || null,
             hasChildren: accompaniment.hasChildren || false,
             childrenCount: accompaniment.childrenCount || 0
           };
@@ -297,4 +309,53 @@ export async function updateGuestReservations(
     await batch.commit();
   }
   return { success: true };
+}
+
+export async function findExistingGuestIdentity(slug: string, email: string) {
+  const giftsColl = adminDb.collection(`events/${slug}/gifts`);
+  const snap = await giftsColl.get();
+  
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    if (data.reservedByList) {
+      const r = data.reservedByList.find((res: {
+        name: string;
+        animal: string;
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+        isCouple?: boolean;
+        partnerName?: string;
+        partnerLastname?: string;
+        hasChildren?: boolean;
+        childrenCount?: number;
+      }) => res.email?.toLowerCase() === email.toLowerCase());
+      if (r) {
+        let firstName = r.firstName || '';
+        let lastName = r.lastName || '';
+        
+        if (!firstName && r.name) {
+          const parts = r.name.split(' ');
+          firstName = parts[0] || '';
+          lastName = parts.slice(1).join(' ') || '';
+        }
+        
+        return {
+          found: true,
+          identity: {
+            name: firstName,
+            lastname: lastName,
+            email: email.toLowerCase(),
+            isCouple: r.isCouple || false,
+            partnerName: r.partnerName || undefined,
+            partnerLastname: r.partnerLastname || undefined,
+            hasChildren: r.hasChildren || false,
+            childrenCount: r.childrenCount || undefined
+          }
+        };
+      }
+    }
+  }
+  
+  return { found: false };
 }
