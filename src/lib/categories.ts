@@ -2,7 +2,7 @@ export type GiftCategory = 'bronze' | 'silver' | 'gold';
 
 export function getGiftCategory(price: number): GiftCategory {
   if (price < 10000) return 'bronze';
-  if (price < 50000) return 'silver';
+  if (price < 30000) return 'silver';
   return 'gold';
 }
 
