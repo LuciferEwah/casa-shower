@@ -62,7 +62,24 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
     
     setLoading(true);
     try {
-      const res = await reserveGift(slug, gift.id, guestIdentity.name, guestIdentity.lastname, guestIdentity.email, selectedQuantity);
+      let reserveName = guestIdentity.name;
+      let reserveLastname = guestIdentity.lastname;
+
+      if (guestIdentity.isCouple && guestIdentity.partnerName) {
+        const partnerName = guestIdentity.partnerName.trim();
+        const partnerLastname = (guestIdentity.partnerLastname || '').trim();
+        const primaryLastname = guestIdentity.lastname.trim();
+
+        if (!partnerLastname || partnerLastname.toLowerCase() === primaryLastname.toLowerCase()) {
+          reserveName = `${guestIdentity.name} y ${partnerName}`;
+          reserveLastname = guestIdentity.lastname;
+        } else {
+          reserveName = `${guestIdentity.name} ${guestIdentity.lastname}`;
+          reserveLastname = `y ${partnerName} ${partnerLastname}`;
+        }
+      }
+
+      const res = await reserveGift(slug, gift.id, reserveName, reserveLastname, guestIdentity.email, selectedQuantity);
       if (res.success) {
         showToast(`¡Reservado exitosamente!`, 'success');
       }
