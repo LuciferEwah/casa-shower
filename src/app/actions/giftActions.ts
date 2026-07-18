@@ -240,3 +240,61 @@ export async function adminRemoveReservationByEmail(slug: string, id: string, id
 
   return { success: true };
 }
+
+export async function updateGuestReservations(
+  slug: string, 
+  email: string, 
+  fullName: string,
+  accompaniment: {
+    isCouple?: boolean;
+    partnerName?: string;
+    partnerLastname?: string;
+    hasChildren?: boolean;
+    childrenCount?: number;
+  }
+) {
+  const giftsColl = adminDb.collection(`events/${slug}/gifts`);
+  const snap = await giftsColl.get();
+  
+  const batch = adminDb.batch();
+  let updatedCount = 0;
+  
+  snap.forEach(doc => {
+    const data = doc.data();
+    if (data.reservedByList) {
+      let modified = false;
+      const newList = data.reservedByList.map((r: {
+        name: string;
+        animal: string;
+        email?: string;
+        isCouple?: boolean;
+        partnerName?: string;
+        hasChildren?: boolean;
+        childrenCount?: number;
+      }) => {
+        if (r.email?.toLowerCase() === email.toLowerCase()) {
+          modified = true;
+          return {
+            ...r,
+            name: fullName,
+            isCouple: accompaniment.isCouple || false,
+            partnerName: accompaniment.partnerName || null,
+            hasChildren: accompaniment.hasChildren || false,
+            childrenCount: accompaniment.childrenCount || 0
+          };
+        }
+        return r;
+      });
+      
+      if (modified) {
+        batch.update(doc.ref, { reservedByList: newList });
+        updatedCount++;
+      }
+    }
+  });
+  
+  if (updatedCount > 0) {
+    await batch.commit();
+  }
+  return { success: true };
+}

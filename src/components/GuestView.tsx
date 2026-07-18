@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Gift } from '@/types';
 import { GiftCard } from './GiftCard';
-import { Typography, Button, Box, MenuItem, Select, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import { updateGuestReservations } from '@/app/actions/giftActions';
+import { Typography, Button, Box, MenuItem, Select, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, CircularProgress, Snackbar, Alert } from '@mui/material';
 import { GiftCategory, getGiftCategory } from '@/lib/categories';
 
 export interface GuestIdentity {
@@ -36,6 +37,93 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
   const [formChildrenCount, setFormChildrenCount] = useState(1);
   
   const [error, setError] = useState('');
+
+  // Profile edit states
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileLastname, setProfileLastname] = useState('');
+  const [profileIsCouple, setProfileIsCouple] = useState(false);
+  const [profilePartnerName, setProfilePartnerName] = useState('');
+  const [profilePartnerLastname, setProfilePartnerLastname] = useState('');
+  const [profileHasChildren, setProfileHasChildren] = useState(false);
+  const [profileChildrenCount, setProfileChildrenCount] = useState(1);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccessToast, setProfileSuccessToast] = useState(false);
+
+  const handleOpenProfile = () => {
+    if (!identity) return;
+    setProfileName(identity.name);
+    setProfileLastname(identity.lastname);
+    setProfileIsCouple(!!identity.isCouple);
+    setProfilePartnerName(identity.partnerName || '');
+    setProfilePartnerLastname(identity.partnerLastname || '');
+    setProfileHasChildren(!!identity.hasChildren);
+    setProfileChildrenCount(identity.childrenCount || 1);
+    setProfileError('');
+    setProfileModalOpen(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!identity) return;
+    if (!profileName.trim() || !profileLastname.trim()) {
+      setProfileError('Por favor completa tu nombre y apellido.');
+      return;
+    }
+    if (profileIsCouple && !profilePartnerName.trim()) {
+      setProfileError('Por favor ingresa el nombre de tu pareja / acompañante.');
+      return;
+    }
+
+    setProfileLoading(true);
+    try {
+      let reserveName = profileName.trim();
+      let reserveLastname = profileLastname.trim();
+
+      if (profileIsCouple && profilePartnerName.trim()) {
+        const partnerName = profilePartnerName.trim();
+        const partnerLastname = profilePartnerLastname.trim();
+        const primaryLastname = profileLastname.trim();
+
+        if (!partnerLastname || partnerLastname.toLowerCase() === primaryLastname.toLowerCase()) {
+          reserveName = `${profileName.trim()} y ${partnerName}`;
+          reserveLastname = profileLastname.trim();
+        } else {
+          reserveName = `${profileName.trim()} ${profileLastname.trim()}`;
+          reserveLastname = `y ${partnerName} ${partnerLastname}`;
+        }
+      }
+      
+      const newFullName = `${reserveName} ${reserveLastname}`;
+
+      const accompaniment = {
+        isCouple: profileIsCouple,
+        partnerName: profileIsCouple ? profilePartnerName.trim() : undefined,
+        partnerLastname: profileIsCouple ? profilePartnerLastname.trim() : undefined,
+        hasChildren: profileHasChildren,
+        childrenCount: profileHasChildren ? Number(profileChildrenCount) || 1 : undefined,
+      };
+
+      await updateGuestReservations(slug, identity.email, newFullName, accompaniment);
+
+      const updatedIdentity: GuestIdentity = {
+        ...identity,
+        name: profileName.trim(),
+        lastname: profileLastname.trim(),
+        ...accompaniment
+      };
+
+      localStorage.setItem('casa_shower_guest', JSON.stringify(updatedIdentity));
+      setIdentity(updatedIdentity);
+      
+      setProfileModalOpen(false);
+      setProfileSuccessToast(true);
+    } catch (e: unknown) {
+      if (e instanceof Error) setProfileError(e.message);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<GiftCategory | 'all'>('all');
@@ -413,17 +501,27 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
               : identity.name}
           </span> 👋
         </Typography>
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => {
-            localStorage.removeItem('casa_shower_guest');
-            setIdentity(null);
-          }}
-          className="rounded-full px-4 text-slate-500 hover:text-purple-600 dark:hover:text-purple-400"
-        >
-          Cerrar Sesión
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleOpenProfile}
+            className="rounded-full px-4 border-purple-200 dark:border-purple-900/50 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-950/20"
+          >
+            Editar Perfil 👤
+          </Button>
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => {
+              localStorage.removeItem('casa_shower_guest');
+              setIdentity(null);
+            }}
+            className="rounded-full px-4 text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 font-medium"
+          >
+            Cerrar Sesión
+          </Button>
+        </div>
       </div>
 
       {/* Anchor for scrolling to gifts */}
@@ -689,6 +787,178 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
           </Button>
         </div>
       )}
+      {/* Profile Edit Dialog */}
+      <Dialog
+        open={profileModalOpen}
+        onClose={() => !profileLoading && setProfileModalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            className: 'rounded-[2rem] p-4 sm:p-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 shadow-2xl',
+            sx: { borderRadius: '2rem' }
+          }
+        }}
+      >
+        <DialogTitle className="font-bold text-center text-purple-900 dark:text-purple-100 text-xl pb-1">
+          👤 Mi Perfil
+        </DialogTitle>
+        <DialogContent className="flex flex-col gap-4 mt-2">
+          <input
+            type="text"
+            placeholder="Nombre"
+            value={profileName}
+            onChange={(e) => setProfileName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-950/50 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium"
+          />
+          <input
+            type="text"
+            placeholder="Apellido"
+            value={profileLastname}
+            onChange={(e) => setProfileLastname(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-950/50 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium"
+          />
+          <input
+            type="email"
+            placeholder="Correo Electrónico"
+            value={identity?.email || ''}
+            disabled
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950/20 text-slate-500 cursor-not-allowed text-sm font-medium"
+          />
+
+          {/* Toggle Regalo en Pareja */}
+          <label className="relative flex items-center justify-between p-3.5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/10 border border-purple-200/50 dark:border-purple-800/30 cursor-pointer hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-all select-none">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">💑</span>
+              <div className="text-left">
+                <div className="text-xs font-bold text-purple-900 dark:text-purple-100">Regalo en Pareja</div>
+                <div className="text-[10px] text-purple-700 dark:text-purple-400 font-medium">Hacer la reserva entre dos personas</div>
+              </div>
+            </div>
+            <div className="relative animate-in zoom-in duration-200">
+              <input 
+                type="checkbox" 
+                checked={profileIsCouple}
+                onChange={(e) => setProfileIsCouple(e.target.checked)}
+                className="sr-only peer" 
+              />
+              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-purple-600"></div>
+            </div>
+          </label>
+
+          {/* Campos del Acompañante */}
+          {profileIsCouple && (
+            <div className="w-full flex flex-col gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800/50 animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                Datos del Acompañante
+              </div>
+              <input
+                type="text"
+                placeholder="Nombre de tu pareja"
+                value={profilePartnerName}
+                onChange={(e) => setProfilePartnerName(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-950/50 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium"
+              />
+              <input
+                type="text"
+                placeholder="Apellido (opcional)"
+                value={profilePartnerLastname}
+                onChange={(e) => setProfilePartnerLastname(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-950/50 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium"
+              />
+            </div>
+          )}
+
+          {/* Toggle Asistir con Niños */}
+          <label className="relative flex items-center justify-between p-3.5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/10 border border-purple-200/50 dark:border-purple-800/30 cursor-pointer hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-all select-none">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">👶</span>
+              <div className="text-left">
+                <div className="text-xs font-bold text-purple-900 dark:text-purple-100">Asistir con Niños / Hijos</div>
+                <div className="text-[10px] text-purple-700 dark:text-purple-400 font-medium font-sans">Indicar si asistes acompañado de niños</div>
+              </div>
+            </div>
+            <div className="relative animate-in zoom-in duration-200">
+              <input 
+                type="checkbox" 
+                checked={profileHasChildren}
+                onChange={(e) => setProfileHasChildren(e.target.checked)}
+                className="sr-only peer" 
+              />
+              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-purple-600"></div>
+            </div>
+          </label>
+
+          {/* Selector de Cantidad de Niños */}
+          {profileHasChildren && (
+            <div className="w-full flex flex-col gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800/50 animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                Cantidad de Niños / Hijos
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setProfileChildrenCount(prev => Math.max(1, prev - 1))}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-900 active:scale-95 transition-all text-base"
+                >
+                  -
+                </button>
+                <div className="flex-1 text-center font-bold text-base text-slate-800 dark:text-slate-200">
+                  {profileChildrenCount} {profileChildrenCount === 1 ? 'niño' : 'niños'}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProfileChildrenCount(prev => prev + 1)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-900 active:scale-95 transition-all text-base"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
+
+          {profileError && (
+            <Typography className="text-red-500 text-xs font-bold text-center mt-1 animate-pulse">
+              {profileError}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions className="flex gap-2 p-4 pt-1 justify-between">
+          <Button 
+            onClick={() => setProfileModalOpen(false)} 
+            disabled={profileLoading}
+            variant="outlined"
+            className="rounded-full px-6 py-2.5 font-bold text-sm border-slate-300 text-slate-700 dark:text-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 w-full shadow-sm"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSaveProfile} 
+            disabled={profileLoading}
+            variant="contained"
+            color="primary"
+            className="rounded-full px-6 py-2.5 font-bold text-sm bg-gradient-to-r from-purple-700 to-purple-900 text-white w-full"
+          >
+            {profileLoading ? <CircularProgress size={20} color="inherit" /> : 'Guardar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={profileSuccessToast}
+        autoHideDuration={4000}
+        onClose={() => setProfileSuccessToast(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setProfileSuccessToast(false)} 
+          severity="success" 
+          variant="filled"
+          className="rounded-xl shadow-lg font-medium"
+        >
+          ¡Perfil actualizado con éxito!
+        </Alert>
+      </Snackbar>
     </section>
   );
 }
