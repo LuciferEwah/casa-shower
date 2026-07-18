@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Gift } from '@/types';
 import { GiftCard } from './GiftCard';
 import { Typography, Button, Box, MenuItem, Select, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
@@ -181,6 +181,13 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
     setMobileVisibleCount((n) => Math.min(n + MOBILE_BATCH_SIZE, total));
   }, [total]);
 
+  const isLoadingRef = useRef(false);
+
+  // Reset loading flag whenever mobileVisibleCount changes
+  useEffect(() => {
+    isLoadingRef.current = false;
+  }, [mobileVisibleCount]);
+
   // Infinite scroll on mobile via scroll event listener
   useEffect(() => {
     if (isDesktop || !hasMoreMobile) return;
@@ -188,16 +195,19 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
     let throttleTimer: NodeJS.Timeout | null = null;
 
     const handleScroll = () => {
-      if (throttleTimer) return;
+      if (throttleTimer || isLoadingRef.current) return;
 
       throttleTimer = setTimeout(() => {
         throttleTimer = null;
         
+        if (isLoadingRef.current) return;
+
         const scrollPosition = window.innerHeight + window.scrollY;
         // Trigger loading when within 400px of the bottom
         const threshold = document.documentElement.scrollHeight - 400;
 
         if (scrollPosition >= threshold) {
+          isLoadingRef.current = true;
           loadMoreMobile();
         }
       }, 150); // Check every 150ms
