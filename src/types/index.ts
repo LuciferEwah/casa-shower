@@ -13,6 +13,7 @@ export interface Gift {
   reservedByAnimal: string | null;
   reservedByEmail?: string | null;
   reservedByList?: { name: string; animal: string; email?: string }[];
+  hidden?: boolean;
 }
 
 export interface Settings {

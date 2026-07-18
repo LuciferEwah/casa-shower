@@ -22,6 +22,7 @@ export function GiftForm({
   const [formLink, setFormLink] = useState(editGift?.link || '');
   const [formPrice, setFormPrice] = useState(editGift?.price || 0);
   const [formUnlimited, setFormUnlimited] = useState(editGift?.unlimited || false);
+  const [formHidden, setFormHidden] = useState(editGift?.hidden || false);
   const [formNeededQuantity, setFormNeededQuantity] = useState(editGift?.neededQuantity || 1);
   const [formMinQuantity, setFormMinQuantity] = useState(editGift?.minQuantity || 1);
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'warning' }>({ open: false, message: '', severity: 'success' });
@@ -50,6 +51,7 @@ export function GiftForm({
       link: formLink,
       price: Number(formPrice),
       unlimited: formUnlimited,
+      hidden: formHidden,
       neededQuantity: needed,
       minQuantity: minQ,
       reservedCount: editGift?.reservedCount || 0,
@@ -125,12 +127,19 @@ export function GiftForm({
       </div>
       
       <div className={`flex flex-col gap-3 ${compact ? 'mt-2' : 'sm:flex-row justify-between items-center mt-8 pt-4'}`}>
-        <FormControlLabel 
-          control={<Switch checked={formUnlimited} onChange={e => setFormUnlimited(e.target.checked)} color="primary" size="small" />} 
-          label="Regalo ilimitado"
-          className="text-slate-700 dark:text-slate-300"
-        />
-        <div className="flex flex-col sm:flex-row gap-2 w-full">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <FormControlLabel 
+            control={<Switch checked={formUnlimited} onChange={e => setFormUnlimited(e.target.checked)} color="primary" size="small" />} 
+            label="Regalo ilimitado"
+            className="text-slate-700 dark:text-slate-300"
+          />
+          <FormControlLabel 
+            control={<Switch checked={formHidden} onChange={e => setFormHidden(e.target.checked)} color="primary" size="small" />} 
+            label="Ocultar regalo"
+            className="text-slate-700 dark:text-slate-300"
+          />
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           {editGift && (
             <Button 
               variant="outlined" 

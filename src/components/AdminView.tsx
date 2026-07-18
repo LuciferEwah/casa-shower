@@ -448,6 +448,7 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                               {(gift.minQuantity ?? 1) > 1 && (
                                 <span className="text-slate-400 font-medium ml-1">• Mín. {gift.minQuantity}</span>
                               )}
+                              {gift.hidden && <span className="text-red-500 dark:text-red-400 font-bold ml-1">• Oculto 🚫</span>}
                             </Typography>
                             {(gift.reservedCount && gift.reservedCount > 0) ? (
                               <Chip

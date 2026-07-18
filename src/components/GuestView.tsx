@@ -98,7 +98,7 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
   }, []);
 
   const filteredAndSortedGifts = useMemo(() => {
-    let result = [...gifts];
+    let result = gifts.filter((g) => !g.hidden);
 
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
