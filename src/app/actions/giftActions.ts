@@ -3,7 +3,6 @@
 import { adminDb } from '@/lib/firebase-admin';
 import { checkAdmin } from './adminActions';
 import { Gift } from '@/types';
-import { getOriginalGiftsMap } from '@/lib/catalog';
 
 // For guest (reserve)
 export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string, guestEmail: string, quantity: number = 1) {
@@ -17,30 +16,8 @@ export async function reserveGift(slug: string, id: string, guestName: string, g
   
   await adminDb.runTransaction(async (transaction) => {
     const giftDoc = await transaction.get(giftRef);
-    let data: Omit<Gift, 'id'>;
-    
-    if (!giftDoc.exists) {
-      const originalMap = getOriginalGiftsMap();
-      const original = originalMap[id];
-      if (!original) throw new Error("Regalo no encontrado");
-      data = {
-        name: original.name,
-        image: original.image,
-        link: original.link,
-        price: original.price,
-        unlimited: original.unlimited,
-        neededQuantity: original.neededQuantity || 1,
-        minQuantity: original.minQuantity || 1,
-        reservedCount: 0,
-        reservedBy: null,
-        reservedByAnimal: null,
-        reservedByEmail: null,
-        reservedByList: [],
-      };
-    } else {
-      data = giftDoc.data() as Omit<Gift, 'id'>;
-    }
-    
+    if (!giftDoc.exists) throw new Error("Regalo no encontrado");
+    const data = giftDoc.data() as Omit<Gift, 'id'>;
     const neededQuantity = data.neededQuantity || 1;
     const reservedCount = data.reservedCount || 0;
     const minQuantity = Math.max(1, Number(data.minQuantity) || 1);
@@ -64,22 +41,13 @@ export async function reserveGift(slug: string, id: string, guestName: string, g
     const prevList = data.reservedByList || [];
     const newReservations = Array(quantity).fill({ name: fullName, animal, email: guestEmail });
     
-    const updateData = {
+    transaction.update(giftRef, {
       reservedCount: reservedCount + quantity,
       reservedByList: [...prevList, ...newReservations],
       reservedBy: fullName, // backward compatibility
       reservedByAnimal: animal,
       reservedByEmail: guestEmail
-    };
-
-    if (!giftDoc.exists) {
-      transaction.set(giftRef, {
-        ...data,
-        ...updateData
-      });
-    } else {
-      transaction.update(giftRef, updateData);
-    }
+    });
   });
 
   return { success: true, animal };
@@ -90,8 +58,7 @@ export async function saveGift(slug: string, data: Omit<Gift, 'id'>, id?: string
   if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
   
   if (id) {
-    const giftRef = adminDb.collection(`events/${slug}/gifts`).doc(id);
-    await giftRef.set(data as Record<string, unknown>, { merge: true });
+    await adminDb.collection(`events/${slug}/gifts`).doc(id).update(data as Record<string, unknown>);
   } else {
     await adminDb.collection(`events/${slug}/gifts`).add(data as Record<string, unknown>);
   }
@@ -100,13 +67,7 @@ export async function saveGift(slug: string, data: Omit<Gift, 'id'>, id?: string
 
 export async function deleteGift(slug: string, id: string) {
   if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
-  
-  const originalMap = getOriginalGiftsMap();
-  if (originalMap[id]) {
-    await adminDb.collection(`events/${slug}/gifts`).doc(id).set({ deleted: true }, { merge: true });
-  } else {
-    await adminDb.collection(`events/${slug}/gifts`).doc(id).delete();
-  }
+  await adminDb.collection(`events/${slug}/gifts`).doc(id).delete();
   return { success: true };
 }
 
@@ -114,13 +75,13 @@ export async function unreserveGift(slug: string, id: string) {
   if (!(await checkAdmin(slug))) throw new Error('Unauthorized');
   
   const giftRef = adminDb.collection(`events/${slug}/gifts`).doc(id);
-  await giftRef.set({ 
+  await giftRef.update({ 
     reservedByList: [], 
     reservedCount: 0,
     reservedBy: null, 
     reservedByAnimal: null,
     reservedByEmail: null
-  }, { merge: true });
+  });
   return { success: true };
 }
 
