@@ -5,7 +5,20 @@ import { checkAdmin } from './adminActions';
 import { Gift } from '@/types';
 
 // For guest (reserve)
-export async function reserveGift(slug: string, id: string, guestName: string, guestLastname: string, guestEmail: string, quantity: number = 1) {
+export async function reserveGift(
+  slug: string, 
+  id: string, 
+  guestName: string, 
+  guestLastname: string, 
+  guestEmail: string, 
+  quantity: number = 1,
+  accompaniment?: {
+    isCouple?: boolean;
+    partnerName?: string;
+    hasChildren?: boolean;
+    childrenCount?: number;
+  }
+) {
   if (!guestName || !guestLastname) throw new Error("Nombre requerido");
   if (!guestEmail) throw new Error("Correo requerido");
   if (!Number.isFinite(quantity) || quantity < 1) throw new Error("Cantidad inválida");
@@ -39,7 +52,15 @@ export async function reserveGift(slug: string, id: string, guestName: string, g
     }
 
     const prevList = data.reservedByList || [];
-    const newReservations = Array(quantity).fill({ name: fullName, animal, email: guestEmail });
+    const newReservations = Array(quantity).fill({ 
+      name: fullName, 
+      animal, 
+      email: guestEmail,
+      isCouple: accompaniment?.isCouple || false,
+      partnerName: accompaniment?.partnerName || null,
+      hasChildren: accompaniment?.hasChildren || false,
+      childrenCount: accompaniment?.childrenCount || 0
+    });
     
     transaction.update(giftRef, {
       reservedCount: reservedCount + quantity,

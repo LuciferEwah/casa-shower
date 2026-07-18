@@ -13,6 +13,8 @@ export interface GuestIdentity {
   isCouple?: boolean;
   partnerName?: string;
   partnerLastname?: string;
+  hasChildren?: boolean;
+  childrenCount?: number;
 }
 
 const DESKTOP_PAGE_SIZE = 12;
@@ -29,6 +31,9 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
   const [formPartnerName, setFormPartnerName] = useState('');
   const [formPartnerLastname, setFormPartnerLastname] = useState('');
   const [showCoupleInfo, setShowCoupleInfo] = useState(false);
+  
+  const [hasChildren, setHasChildren] = useState(false);
+  const [formChildrenCount, setFormChildrenCount] = useState(1);
   
   const [error, setError] = useState('');
 
@@ -87,6 +92,8 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
       isCouple,
       partnerName: isCouple ? formPartnerName.trim() : undefined,
       partnerLastname: isCouple ? formPartnerLastname.trim() : undefined,
+      hasChildren,
+      childrenCount: hasChildren ? Number(formChildrenCount) || 1 : undefined,
     };
 
     localStorage.setItem('casa_shower_guest', JSON.stringify(newIdentity));
@@ -288,6 +295,58 @@ export function GuestView({ slug, gifts }: { slug: string; gifts: Gift[] }) {
                   }}
                   className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/50 dark:bg-slate-950/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
+              </div>
+            )}
+
+            {/* Toggle Asistir con Niños */}
+            <label className="relative flex items-center justify-between p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/50 dark:border-purple-800/30 cursor-pointer hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-all select-none mt-2">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">👶</span>
+                <div className="text-left">
+                  <div className="text-sm font-bold text-purple-900 dark:text-purple-100">Asistir con Niños / Hijos</div>
+                  <div className="text-xs text-purple-700 dark:text-purple-400 font-medium font-sans">Indicar si asistes acompañado de niños</div>
+                </div>
+              </div>
+              <div className="relative animate-in zoom-in duration-200">
+                <input 
+                  type="checkbox" 
+                  checked={hasChildren}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setHasChildren(checked);
+                    setError('');
+                  }}
+                  className="sr-only peer" 
+                />
+                <div className="w-11 h-6 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-purple-600"></div>
+              </div>
+            </label>
+
+            {/* Selector de Cantidad de Niños */}
+            {hasChildren && (
+              <div className="w-full flex flex-col gap-4 mt-1 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-200/60 dark:border-slate-800/50 animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+                <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
+                  Cantidad de Niños / Hijos
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFormChildrenCount(prev => Math.max(1, prev - 1))}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-900 active:scale-95 transition-all text-lg"
+                  >
+                    -
+                  </button>
+                  <div className="flex-1 text-center font-bold text-lg text-slate-800 dark:text-slate-200">
+                    {formChildrenCount} {formChildrenCount === 1 ? 'niño' : 'niños'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormChildrenCount(prev => prev + 1)}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-900 active:scale-95 transition-all text-lg"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             )}
           </div>

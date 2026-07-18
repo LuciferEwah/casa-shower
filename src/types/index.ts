@@ -12,7 +12,15 @@ export interface Gift {
   reservedBy: string | null;
   reservedByAnimal: string | null;
   reservedByEmail?: string | null;
-  reservedByList?: { name: string; animal: string; email?: string }[];
+  reservedByList?: { 
+    name: string; 
+    animal: string; 
+    email?: string;
+    isCouple?: boolean;
+    partnerName?: string;
+    hasChildren?: boolean;
+    childrenCount?: number;
+  }[];
   hidden?: boolean;
 }
 

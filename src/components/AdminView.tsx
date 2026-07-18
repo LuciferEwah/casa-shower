@@ -107,10 +107,18 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     showToast('¡Link copiado al portapapeles!', 'success');
   };
 
-  // Financial Dashboard calculations
   let totalMoney = 0;
   let totalReservedItems = 0;
-  const guestsMap = new Map<string, { email?: string, total: number, items: { name: string, giftId: string }[] }>();
+
+  const guestsMap = new Map<string, { 
+    email?: string, 
+    total: number, 
+    items: { name: string, giftId: string }[],
+    isCouple?: boolean,
+    partnerName?: string,
+    hasChildren?: boolean,
+    childrenCount?: number
+  }>();
 
   gifts.forEach(gift => {
     const count = gift.reservedCount || 0;
@@ -121,10 +129,22 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     
     if (gift.reservedByList) {
       gift.reservedByList.forEach(r => {
-        const guest = guestsMap.get(r.name) || { email: r.email, total: 0, items: [] };
+        const guest = guestsMap.get(r.name) || { 
+          email: r.email, 
+          total: 0, 
+          items: [],
+          isCouple: r.isCouple,
+          partnerName: r.partnerName,
+          hasChildren: r.hasChildren,
+          childrenCount: r.childrenCount
+        };
         guest.total += gift.price;
         guest.items.push({ name: gift.name, giftId: gift.id });
-        if (r.email) guest.email = r.email; // Ensure email is captured
+        if (r.email) guest.email = r.email;
+        if (r.isCouple !== undefined) guest.isCouple = r.isCouple;
+        if (r.partnerName !== undefined) guest.partnerName = r.partnerName;
+        if (r.hasChildren !== undefined) guest.hasChildren = r.hasChildren;
+        if (r.childrenCount !== undefined) guest.childrenCount = r.childrenCount;
         guestsMap.set(r.name, guest);
       });
     } else if (gift.reservedBy) {
@@ -136,6 +156,20 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
     }
   });
   
+  let totalAdults = 0;
+  let totalChildren = 0;
+  
+  guestsMap.forEach((guest) => {
+    if (guest.isCouple) {
+      totalAdults += 2;
+    } else {
+      totalAdults += 1;
+    }
+    if (guest.hasChildren && guest.childrenCount) {
+      totalChildren += guest.childrenCount;
+    }
+  });
+
   const uniqueGuests = Array.from(guestsMap.entries()).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.total - a.total);
 
   const getGroupedGuestItems = (items: { name: string, giftId: string }[]) => {
@@ -215,23 +249,32 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
       {currentTab === 'analytics' && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
           {/* Financial Dashboard */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <Box className="p-6 sm:p-8 rounded-[1.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 text-center shadow-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-10 w-full">
+            <Box className="p-6 sm:p-8 rounded-[1.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 text-center shadow-md flex flex-col justify-center items-center">
               <Typography variant="body2" className="text-purple-600 dark:text-purple-400 uppercase tracking-wide font-bold mb-1">Monto Total</Typography>
               <Typography variant="h4" className="font-bold text-slate-800 dark:text-slate-100">
                 ${totalMoney.toLocaleString('es-CL')}
               </Typography>
             </Box>
-            <Box className="p-6 sm:p-8 rounded-[1.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 text-center shadow-md">
+            <Box className="p-6 sm:p-8 rounded-[1.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 text-center shadow-md flex flex-col justify-center items-center">
               <Typography variant="body2" className="text-purple-600 dark:text-purple-400 uppercase tracking-wide font-bold mb-1">Regalos Reservados</Typography>
               <Typography variant="h4" className="font-bold text-slate-800 dark:text-slate-100">
                 {totalReservedItems}
               </Typography>
             </Box>
-            <Box className="p-6 sm:p-8 rounded-[1.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 text-center shadow-md">
+            <Box className="p-6 sm:p-8 rounded-[1.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 text-center shadow-md flex flex-col justify-center items-center">
               <Typography variant="body2" className="text-purple-600 dark:text-purple-400 uppercase tracking-wide font-bold mb-1">Invitados Únicos</Typography>
               <Typography variant="h4" className="font-bold text-slate-800 dark:text-slate-100">
                 {uniqueGuests.length}
+              </Typography>
+            </Box>
+            <Box className="p-6 sm:p-8 rounded-[1.5rem] bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg border border-white/50 dark:border-slate-700/50 text-center shadow-md flex flex-col justify-center items-center">
+              <Typography variant="body2" className="text-purple-600 dark:text-purple-400 uppercase tracking-wide font-bold mb-1">Asistencia Aprox.</Typography>
+              <Typography variant="h4" className="font-bold text-slate-800 dark:text-slate-100">
+                {totalAdults + totalChildren}
+              </Typography>
+              <Typography variant="caption" className="text-slate-500 dark:text-slate-400 font-bold mt-1">
+                {totalAdults} {totalAdults === 1 ? 'adulto' : 'adultos'} + {totalChildren} {totalChildren === 1 ? 'niño' : 'niños'}
               </Typography>
             </Box>
           </div>
@@ -259,34 +302,47 @@ export function AdminView({ slug, gifts, settings }: { slug: string, gifts: Gift
                   <TableHead className="bg-purple-100/50 dark:bg-purple-900/20">
                     <TableRow>
                       <TableCell className="font-bold text-purple-900 dark:text-purple-100">Nombre</TableCell>
+                      <TableCell className="font-bold text-purple-900 dark:text-purple-100">Acompañantes</TableCell>
                       <TableCell className="font-bold text-purple-900 dark:text-purple-100">Correo</TableCell>
                       <TableCell className="font-bold text-purple-900 dark:text-purple-100">Regalos Reservados</TableCell>
                       <TableCell align="right" className="font-bold text-purple-900 dark:text-purple-100">Total Gastado</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {filteredUniqueGuests.map((guest) => (
-                      <TableRow key={guest.name} className="hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors">
-                        <TableCell className="font-medium text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">{guest.name}</TableCell>
-                        <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50">{guest.email || '-'}</TableCell>
-                        <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50 max-w-[400px]">
-                          <div className="flex flex-wrap gap-2">
-                            {getGroupedGuestItems(guest.items).map((item) => (
-                              <Chip 
-                                key={item.giftId} 
-                                label={`${item.name} ${item.count > 1 ? `(x${item.count})` : ''}`}
-                                size="small"
-                                onDelete={() => handleRemoveAll(item.giftId, guest.email || guest.name)}
-                                className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-800/50 font-medium"
-                              />
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell align="right" className="font-bold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">
-                          ${guest.total.toLocaleString('es-CL')}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredUniqueGuests.map((guest) => {
+                      const accompanyTexts: string[] = [];
+                      if (guest.isCouple) {
+                        accompanyTexts.push(guest.partnerName ? `Pareja: ${guest.partnerName}` : 'Pareja / Acompañante');
+                      }
+                      if (guest.hasChildren && guest.childrenCount) {
+                        accompanyTexts.push(`${guest.childrenCount} ${guest.childrenCount === 1 ? 'niño' : 'niños'}`);
+                      }
+                      const accompanyDisplay = accompanyTexts.join(' | ') || '-';
+
+                      return (
+                        <TableRow key={guest.name} className="hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors">
+                          <TableCell className="font-medium text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">{guest.name}</TableCell>
+                          <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50">{accompanyDisplay}</TableCell>
+                          <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50">{guest.email || '-'}</TableCell>
+                          <TableCell className="text-slate-600 dark:text-slate-400 border-b border-slate-200/50 dark:border-slate-700/50 max-w-[400px]">
+                            <div className="flex flex-wrap gap-2">
+                              {getGroupedGuestItems(guest.items).map((item) => (
+                                <Chip 
+                                  key={item.giftId} 
+                                  label={`${item.name} ${item.count > 1 ? `(x${item.count})` : ''}`}
+                                  size="small"
+                                  onDelete={() => handleRemoveAll(item.giftId, guest.email || guest.name)}
+                                  className="bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-800/50 font-medium"
+                                />
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell align="right" className="font-bold text-slate-800 dark:text-slate-200 border-b border-slate-200/50 dark:border-slate-700/50">
+                            ${guest.total.toLocaleString('es-CL')}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </TableContainer>

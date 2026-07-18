@@ -79,7 +79,20 @@ export function GiftCard({ slug, gift, guestIdentity }: { slug: string, gift: Gi
         }
       }
 
-      const res = await reserveGift(slug, gift.id, reserveName, reserveLastname, guestIdentity.email, selectedQuantity);
+      const res = await reserveGift(
+        slug, 
+        gift.id, 
+        reserveName, 
+        reserveLastname, 
+        guestIdentity.email, 
+        selectedQuantity,
+        {
+          isCouple: guestIdentity.isCouple,
+          partnerName: guestIdentity.partnerName,
+          hasChildren: guestIdentity.hasChildren,
+          childrenCount: guestIdentity.childrenCount
+        }
+      );
       if (res.success) {
         showToast(`¡Reservado exitosamente!`, 'success');
       }
