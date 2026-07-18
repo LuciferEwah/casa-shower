@@ -13,7 +13,12 @@ export function useFirebaseGifts(slug: string) {
     const giftsRef = collection(db, `events/${slug}/gifts`);
     const unsubscribe = onSnapshot(giftsRef, (snap) => {
       const data: Gift[] = [];
-      snap.forEach(doc => data.push({ id: doc.id, ...doc.data() } as Gift));
+      snap.forEach(doc => {
+        const giftData = doc.data();
+        if (giftData && giftData.name !== undefined && giftData.price !== undefined && giftData.deleted !== true) {
+          data.push({ id: doc.id, ...giftData } as Gift);
+        }
+      });
       setGifts(data);
       setLoading(false);
     }, (err) => {
